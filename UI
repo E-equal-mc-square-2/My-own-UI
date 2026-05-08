@@ -1,27 +1,20 @@
 
 --!strict
--- KilometresUI V5
+-- KilometresUI V6
 -- Single-file Roblox ModuleScript
--- Goals:
---   • Reliable hide/show
---   • Draggable window and floating restore circle
---   • Auto-sizing text
---   • Animated toggles
---   • Settings panel
---   • Theme presets
---   • Player profile card
---   • Clean tab/page system
---   • Touch-friendly controls
+-- Fixed rewrite: draggable, hideable, floating restore circle, settings, themes, avatar card, auto-sizing text
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local TextService = game:GetService("TextService")
 
 local LocalPlayer = Players.LocalPlayer
 
 local Library = {}
 Library.__index = Library
+
+local WINDOW_SIZE = Vector2.new(560, 380)
+local RADIUS = 14
 
 local THEME_PRESETS = {
 	Purple = {
@@ -34,7 +27,6 @@ local THEME_PRESETS = {
 		Text = Color3.fromRGB(245, 242, 255),
 		SubText = Color3.fromRGB(182, 173, 207),
 		Danger = Color3.fromRGB(255, 101, 131),
-		Success = Color3.fromRGB(82, 221, 144),
 	},
 	Blue = {
 		Background = Color3.fromRGB(16, 20, 30),
@@ -46,7 +38,6 @@ local THEME_PRESETS = {
 		Text = Color3.fromRGB(245, 248, 255),
 		SubText = Color3.fromRGB(175, 190, 210),
 		Danger = Color3.fromRGB(255, 101, 131),
-		Success = Color3.fromRGB(82, 221, 144),
 	},
 	Green = {
 		Background = Color3.fromRGB(16, 24, 18),
@@ -58,7 +49,6 @@ local THEME_PRESETS = {
 		Text = Color3.fromRGB(245, 255, 247),
 		SubText = Color3.fromRGB(175, 205, 182),
 		Danger = Color3.fromRGB(255, 101, 131),
-		Success = Color3.fromRGB(82, 221, 144),
 	},
 	Pink = {
 		Background = Color3.fromRGB(28, 16, 24),
@@ -70,13 +60,10 @@ local THEME_PRESETS = {
 		Text = Color3.fromRGB(255, 245, 250),
 		SubText = Color3.fromRGB(220, 175, 202),
 		Danger = Color3.fromRGB(255, 101, 131),
-		Success = Color3.fromRGB(82, 221, 144),
 	},
 }
 
-local DEFAULT_THEME = THEME_PRESETS.Purple
-local WINDOW_SIZE = Vector2.new(560, 380)
-local RADIUS = 14
+local DEFAULT_THEME = table.clone(THEME_PRESETS.Purple)
 
 local function mk(className: string, props: {[string]: any}?)
 	local inst = Instance.new(className)
@@ -120,52 +107,33 @@ local function tween(inst: Instance, time: number, props: {[string]: any})
 	return t
 end
 
-local function safeThumbnail(userId: number)
+local function safeThumbnail(userId: number): string
 	local ok, result = pcall(function()
 		return Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size180x180)
 	end)
-	return ok and result or ""
+	if ok then
+		return result
+	end
+	return ""
 end
 
-local function autoTextLabel(parent: Instance, text: string, color: Color3, size: number, bold: boolean?, width: number, height: number?)
-	local label = mk("TextLabel", {
-		BackgroundTransparency = 1,
-		Text = text,
-		TextColor3 = color,
-		Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham,
-		TextSize = size,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Center,
-		TextWrapped = false,
-		AutomaticSize = Enum.AutomaticSize.None,
-		Size = UDim2.new(0, width, 0, height or size + 6),
-		Parent = parent,
-	})
+local function fitText(label: TextLabel, maxSize: number, minSize: number?)
 	local constraint = mk("UITextSizeConstraint", {
-		MaxTextSize = size,
-		MinTextSize = math.max(11, size - 3),
+		MaxTextSize = maxSize,
+		MinTextSize = minSize or math.max(10, maxSize - 4),
 		Parent = label,
 	})
-	return label, constraint
+	return constraint
 end
 
-local function styleButton(btn: TextButton, theme)
+local function styleRoundedButton(btn: TextButton, theme)
 	btn.AutoButtonColor = false
 	btn.BackgroundColor3 = theme.PanelAlt
 	btn.TextColor3 = theme.Text
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 14
-	btn.ClipsDescendants = false
-	addCorner(btn, RADIUS - 4)
+	addCorner(btn, 10)
 	addStroke(btn, theme.Stroke, 0.4)
-end
-
-local function setVisibleGroup(group, visible)
-	for _, obj in ipairs(group) do
-		if obj and obj.Parent then
-			obj.Visible = visible
-		end
-	end
 end
 
 function Library.new(config)
@@ -187,7 +155,7 @@ function Library.new(config)
 	end
 
 	self.Title = config.Title or "KilometresUI"
-	self.Subtitle = config.Subtitle or "V5 rebuild"
+	self.Subtitle = config.Subtitle or "V6 fixed rewrite"
 	self._hidden = false
 	self._windowPos = config.Position or UDim2.new(0.5, -WINDOW_SIZE.X / 2, 0.5, -WINDOW_SIZE.Y / 2)
 	self._floatingPos = UDim2.new(0, 18, 1, -74)
@@ -258,34 +226,30 @@ function Library.new(config)
 	local title = mk("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 16, 0, 5),
-		Size = UDim2.new(1, -225, 0, 24),
+		Size = UDim2.new(1, -230, 0, 24),
 		Text = self.Title,
 		TextColor3 = self.Theme.Text,
 		Font = Enum.Font.GothamBold,
 		TextSize = 18,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextScaled = false,
 		ZIndex = 4,
 		Parent = topbar,
 	})
-	mk("UITextSizeConstraint", {MaxTextSize = 18, MinTextSize = 14, Parent = title})
-	self.TitleLabel = title
+	fitText(title, 18, 14)
 
 	local subtitle = mk("TextLabel", {
 		BackgroundTransparency = 1,
 		Position = UDim2.new(0, 16, 0, 28),
-		Size = UDim2.new(1, -225, 0, 16),
+		Size = UDim2.new(1, -230, 0, 16),
 		Text = self.Subtitle,
 		TextColor3 = self.Theme.SubText,
 		Font = Enum.Font.Gotham,
 		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextScaled = false,
 		ZIndex = 4,
 		Parent = topbar,
 	})
-	mk("UITextSizeConstraint", {MaxTextSize = 12, MinTextSize = 10, Parent = subtitle})
-	self.SubtitleLabel = subtitle
+	fitText(subtitle, 12, 10)
 
 	local settingsBtn = mk("TextButton", {
 		Name = "SettingsButton",
@@ -302,7 +266,6 @@ function Library.new(config)
 	})
 	addCorner(settingsBtn, 11)
 	addStroke(settingsBtn, self.Theme.Stroke, 0.45)
-	self.SettingsButton = settingsBtn
 
 	local hideBtn = mk("TextButton", {
 		Name = "HideButton",
@@ -318,7 +281,6 @@ function Library.new(config)
 		Parent = topbar,
 	})
 	addCorner(hideBtn, 11)
-	self.HideButton = hideBtn
 
 	local floating = mk("TextButton", {
 		Name = "FloatingToggle",
@@ -336,7 +298,6 @@ function Library.new(config)
 	})
 	addCorner(floating, 999)
 	addStroke(floating, Color3.fromRGB(255, 255, 255), 0.85, 1)
-	self.FloatingToggle = floating
 
 	local body = mk("Frame", {
 		Name = "Body",
@@ -346,7 +307,6 @@ function Library.new(config)
 		ZIndex = 2,
 		Parent = main,
 	})
-	self.Body = body
 
 	local sidebar = mk("Frame", {
 		Name = "Sidebar",
@@ -358,8 +318,6 @@ function Library.new(config)
 	addCorner(sidebar, RADIUS)
 	addStroke(sidebar, self.Theme.Stroke, 0.42)
 	addPadding(sidebar, 10, 10, 10, 10)
-	self.Sidebar = sidebar
-
 	mk("UIListLayout", {
 		Padding = UDim.new(0, 8),
 		SortOrder = Enum.SortOrder.LayoutOrder,
@@ -375,7 +333,6 @@ function Library.new(config)
 	})
 	addCorner(profile, 14)
 	addStroke(profile, self.Theme.Stroke, 0.5)
-	self.ProfileCard = profile
 
 	local avatar = mk("ImageLabel", {
 		Name = "Avatar",
@@ -388,7 +345,6 @@ function Library.new(config)
 	})
 	addCorner(avatar, 999)
 	addStroke(avatar, self.Theme.Accent, 0.1, 2)
-	self.Avatar = avatar
 
 	local displayName = mk("TextLabel", {
 		BackgroundTransparency = 1,
@@ -402,7 +358,7 @@ function Library.new(config)
 		ZIndex = 4,
 		Parent = profile,
 	})
-	mk("UITextSizeConstraint", {MaxTextSize = 13, MinTextSize = 11, Parent = displayName})
+	fitText(displayName, 13, 11)
 
 	local userTag = mk("TextLabel", {
 		BackgroundTransparency = 1,
@@ -416,7 +372,7 @@ function Library.new(config)
 		ZIndex = 4,
 		Parent = profile,
 	})
-	mk("UITextSizeConstraint", {MaxTextSize = 11, MinTextSize = 10, Parent = userTag})
+	fitText(userTag, 11, 10)
 
 	local pages = mk("Frame", {
 		Name = "Pages",
@@ -426,7 +382,6 @@ function Library.new(config)
 		ZIndex = 2,
 		Parent = body,
 	})
-	self.Pages = pages
 	addPadding(pages, 10, 10, 10, 10)
 	mk("UIListLayout", {
 		Padding = UDim.new(0, 10),
@@ -444,7 +399,6 @@ function Library.new(config)
 		Parent = sidebar,
 	})
 	addCorner(indicator, 999)
-	self.Indicator = indicator
 
 	local settingsPanel = mk("Frame", {
 		Name = "SettingsPanel",
@@ -458,14 +412,13 @@ function Library.new(config)
 	addCorner(settingsPanel, 14)
 	addStroke(settingsPanel, self.Theme.Stroke, 0.28)
 	addPadding(settingsPanel, 12, 12, 12, 12)
-	self.SettingsPanel = settingsPanel
 	mk("UIListLayout", {
 		Padding = UDim.new(0, 8),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = settingsPanel,
 	})
 
-	local settingsTitle = mk("TextLabel", {
+	mk("TextLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 22),
 		Text = "Settings",
@@ -476,10 +429,9 @@ function Library.new(config)
 		ZIndex = 51,
 		Parent = settingsPanel,
 	})
-	mk("UITextSizeConstraint", {MaxTextSize = 16, MinTextSize = 13, Parent = settingsTitle})
 
-	local function addSectionLabel(text)
-		local label = mk("TextLabel", {
+	local function addSection(text)
+		mk("TextLabel", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 16),
 			Text = text,
@@ -490,11 +442,10 @@ function Library.new(config)
 			ZIndex = 51,
 			Parent = settingsPanel,
 		})
-		return label
 	end
 
 	local function addSettingsButton(text, callback)
-		local b = mk("TextButton", {
+		local button = mk("TextButton", {
 			BackgroundColor3 = self.Theme.PanelAlt,
 			Text = text,
 			TextColor3 = self.Theme.Text,
@@ -505,10 +456,10 @@ function Library.new(config)
 			ZIndex = 51,
 			Parent = settingsPanel,
 		})
-		addCorner(b, 10)
-		addStroke(b, self.Theme.Stroke, 0.45)
-		b.MouseButton1Click:Connect(callback)
-		return b
+		addCorner(button, 10)
+		addStroke(button, self.Theme.Stroke, 0.45)
+		button.MouseButton1Click:Connect(callback)
+		return button
 	end
 
 	local settingsOpen = false
@@ -516,42 +467,38 @@ function Library.new(config)
 		settingsOpen = not settingsOpen
 		settingsPanel.Visible = settingsOpen
 	end
-	settingsBtn.MouseButton1Click:Connect(toggleSettings)
 
 	local function applyTheme(presetName: string)
-		if not THEME_PRESETS[presetName] then return end
-		self.Theme = table.clone(THEME_PRESETS[presetName])
+		local preset = THEME_PRESETS[presetName]
+		if not preset then return end
+		self.Theme = table.clone(preset)
 		self.ThemeName = presetName
 
 		main.BackgroundColor3 = self.Theme.Background
 		topbar.BackgroundColor3 = self.Theme.Topbar
 		sidebar.BackgroundColor3 = self.Theme.Panel
 		settingsPanel.BackgroundColor3 = self.Theme.Panel
-		shadow.BackgroundTransparency = 0.45
 		indicator.BackgroundColor3 = self.Theme.Accent
 		hideBtn.BackgroundColor3 = self.Theme.Accent
 		floating.BackgroundColor3 = self.Theme.Accent
 		settingsBtn.BackgroundColor3 = self.Theme.PanelAlt
-		addStroke(main, self.Theme.Stroke, 0.16, 1)
-		addStroke(sidebar, self.Theme.Stroke, 0.42, 1)
-		addStroke(settingsPanel, self.Theme.Stroke, 0.28, 1)
+		avatar.Image = safeThumbnail(LocalPlayer.UserId)
 		title.TextColor3 = self.Theme.Text
 		subtitle.TextColor3 = self.Theme.SubText
 		displayName.TextColor3 = self.Theme.Text
 		userTag.TextColor3 = self.Theme.SubText
-		avatar.Image = safeThumbnail(LocalPlayer.UserId)
 		self:Notify({Text = presetName .. " theme applied", Duration = 2})
 	end
 
 	local dragging = false
 	local dragStart: Vector3? = nil
-	local startPos: UDim2? = nil
+	local dragPos: UDim2? = nil
 	local dragInput: InputObject? = nil
 
 	local function updateDrag(input)
-		if not dragStart or not startPos then return end
+		if not dragStart or not dragPos then return end
 		local delta = input.Position - dragStart
-		local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		local newPos = UDim2.new(dragPos.X.Scale, dragPos.X.Offset + delta.X, dragPos.Y.Scale, dragPos.Y.Offset + delta.Y)
 		main.Position = newPos
 		shadow.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset - 5, newPos.Y.Scale, newPos.Y.Offset - 5)
 		self._windowPos = newPos
@@ -561,7 +508,7 @@ function Library.new(config)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			dragStart = input.Position
-			startPos = main.Position
+			dragPos = main.Position
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
@@ -625,7 +572,31 @@ function Library.new(config)
 		})
 	end
 
-	function self:Notify(info)
+	local function hideWindow()
+		self._hidden = true
+		floating.Visible = true
+		tween(main, 0.14, {BackgroundTransparency = 1})
+		tween(shadow, 0.14, {BackgroundTransparency = 1})
+		task.delay(0.16, function()
+			if self._hidden then
+				main.Visible = false
+				shadow.Visible = false
+			end
+		end)
+	end
+
+	local function showWindow()
+		self._hidden = false
+		shadow.Visible = true
+		main.Visible = true
+		floating.Visible = false
+		main.BackgroundTransparency = 1
+		shadow.BackgroundTransparency = 1
+		tween(main, 0.18, {BackgroundTransparency = 0})
+		tween(shadow, 0.18, {BackgroundTransparency = 0.45})
+	end
+
+	self.Notify = function(_, info)
 		info = info or {}
 		local note = mk("Frame", {
 			BackgroundColor3 = self.Theme.Panel,
@@ -636,6 +607,7 @@ function Library.new(config)
 		})
 		addCorner(note, 12)
 		addStroke(note, self.Theme.Stroke, 0.35)
+
 		mk("Frame", {
 			BackgroundColor3 = info.Type == "error" and self.Theme.Danger or self.Theme.Accent,
 			BorderSizePixel = 0,
@@ -643,6 +615,7 @@ function Library.new(config)
 			ZIndex = 101,
 			Parent = note,
 		})
+
 		local txt = mk("TextLabel", {
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0, 16, 0, 8),
@@ -657,13 +630,16 @@ function Library.new(config)
 			ZIndex = 101,
 			Parent = note,
 		})
-		mk("UITextSizeConstraint", {MaxTextSize = 14, MinTextSize = 12, Parent = txt})
+		fitText(txt, 14, 12)
+
 		tween(note, 0.16, {Position = UDim2.new(1, -300, 1, -96)})
 		task.delay(info.Duration or 2.5, function()
 			if note.Parent then
 				tween(note, 0.16, {Position = UDim2.new(1, -300, 1, -56), BackgroundTransparency = 1})
 				task.delay(0.18, function()
-					if note.Parent then note:Destroy() end
+					if note.Parent then
+						note:Destroy()
+					end
 				end)
 			end
 		end)
@@ -673,32 +649,18 @@ function Library.new(config)
 	window._library = self
 
 	function window:Show()
-		self._library._hidden = false
-		shadow.Visible = true
-		main.Visible = true
-		floating.Visible = false
-		TweenService:Create(shadow, TweenInfo.new(0.18), {BackgroundTransparency = 0.45}):Play()
-		TweenService:Create(main, TweenInfo.new(0.18), {BackgroundTransparency = 0}):Play()
+		showWindow()
 	end
 
 	function window:Hide()
-		self._library._hidden = true
-		floating.Visible = true
-		TweenService:Create(main, TweenInfo.new(0.14), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(shadow, TweenInfo.new(0.14), {BackgroundTransparency = 1}):Play()
-		task.delay(0.16, function()
-			if self._library._hidden then
-				main.Visible = false
-				shadow.Visible = false
-			end
-		end)
+		hideWindow()
 	end
 
 	function window:Toggle()
 		if self._library._hidden then
-			window:Show()
+			showWindow()
 		else
-			window:Hide()
+			hideWindow()
 		end
 	end
 
@@ -724,16 +686,16 @@ function Library.new(config)
 			Top = UDim2.new(0.5, -WINDOW_SIZE.X / 2, 0.08, 0),
 			Bottom = UDim2.new(0.5, -WINDOW_SIZE.X / 2, 0.78, 0),
 		}
-		if name == "Custom" then
-			self:Notify({Text = "Drag the window anywhere. It will stay there.", Duration = 2})
+		local target = presets[name]
+		if not target then
+			if name == "Custom" then
+				self:Notify({Text = "Drag the window anywhere. The position is saved while the UI is open.", Duration = 2})
+			end
 			return
 		end
-		local target = presets[name]
-		if target then
-			self._library._windowPos = target
-			tween(main, 0.2, {Position = target})
-			tween(shadow, 0.2, {Position = UDim2.new(target.X.Scale, target.X.Offset - 5, target.Y.Scale, target.Y.Offset - 5)})
-		end
+		self._library._windowPos = target
+		tween(main, 0.2, {Position = target})
+		tween(shadow, 0.2, {Position = UDim2.new(target.X.Scale, target.X.Offset - 5, target.Y.Scale, target.Y.Offset - 5)})
 	end
 
 	function window:CreateTab(tabName)
@@ -786,6 +748,18 @@ function Library.new(config)
 		end
 		button.MouseButton1Click:Connect(activate)
 
+		local function makeBlock(sizeY)
+			local block = mk("Frame", {
+				BackgroundColor3 = self._library.Theme.Panel,
+				Size = UDim2.new(1, 0, 0, sizeY),
+				ZIndex = 10,
+				Parent = page,
+			})
+			addCorner(block, 10)
+			addStroke(block, self._library.Theme.Stroke, 0.4)
+			return block
+		end
+
 		function tab:CreateLabel(info)
 			info = info or {}
 			local label = mk("TextLabel", {
@@ -802,7 +776,7 @@ function Library.new(config)
 				ZIndex = 10,
 				Parent = page,
 			})
-			mk("UITextSizeConstraint", {MaxTextSize = info.Size or 13, MinTextSize = 11, Parent = label})
+			fitText(label, info.Size or 13, 11)
 			return label
 		end
 
@@ -834,21 +808,16 @@ function Library.new(config)
 			addStroke(b, self._library.Theme.Stroke, 0.4)
 			b.MouseEnter:Connect(function() tween(b, 0.12, {BackgroundColor3 = self._library.Theme.Accent}) end)
 			b.MouseLeave:Connect(function() tween(b, 0.12, {BackgroundColor3 = self._library.Theme.PanelAlt}) end)
-			b.MouseButton1Click:Connect(function() if info.Callback then info.Callback() end end)
+			b.MouseButton1Click:Connect(function()
+				if info.Callback then info.Callback() end
+			end)
 			return b
 		end
 
 		function tab:CreateToggle(info)
 			info = info or {}
 			local state = info.Default == true
-			local holder = mk("Frame", {
-				BackgroundColor3 = self._library.Theme.Panel,
-				Size = UDim2.new(1, 0, 0, 46),
-				ZIndex = 10,
-				Parent = page,
-			})
-			addCorner(holder, 10)
-			addStroke(holder, self._library.Theme.Stroke, 0.4)
+			local holder = makeBlock(46)
 
 			mk("TextLabel", {
 				BackgroundTransparency = 1,
@@ -905,15 +874,7 @@ function Library.new(config)
 			local max = info.Max or 100
 			local value = info.Default or min
 			local draggingSlider = false
-
-			local holder = mk("Frame", {
-				BackgroundColor3 = self._library.Theme.Panel,
-				Size = UDim2.new(1, 0, 0, 62),
-				ZIndex = 10,
-				Parent = page,
-			})
-			addCorner(holder, 10)
-			addStroke(holder, self._library.Theme.Stroke, 0.4)
+			local holder = makeBlock(62)
 
 			local label = mk("TextLabel", {
 				BackgroundTransparency = 1,
@@ -927,7 +888,7 @@ function Library.new(config)
 				ZIndex = 11,
 				Parent = holder,
 			})
-			local labelConstraint = mk("UITextSizeConstraint", {MaxTextSize = 14, MinTextSize = 11, Parent = label})
+			fitText(label, 14, 11)
 
 			local valueLabel = mk("TextLabel", {
 				BackgroundTransparency = 1,
@@ -1001,16 +962,7 @@ function Library.new(config)
 			local items = info.Items or {}
 			local current = info.Default or items[1]
 			local open = false
-
-			local holder = mk("Frame", {
-				BackgroundColor3 = self._library.Theme.Panel,
-				AutomaticSize = Enum.AutomaticSize.Y,
-				Size = UDim2.new(1, 0, 0, 48),
-				ZIndex = 10,
-				Parent = page,
-			})
-			addCorner(holder, 10)
-			addStroke(holder, self._library.Theme.Stroke, 0.4)
+			local holder = makeBlock(48)
 			addPadding(holder, 12, 12, 12, 12)
 
 			local header = mk("TextButton", {
@@ -1033,7 +985,7 @@ function Library.new(config)
 				ZIndex = 11,
 				Parent = holder,
 			})
-			mk("UITextSizeConstraint", {MaxTextSize = 14, MinTextSize = 11, Parent = titleLabel})
+			fitText(titleLabel, 14, 11)
 
 			local selected = mk("TextLabel", {
 				BackgroundTransparency = 1,
@@ -1124,14 +1076,7 @@ function Library.new(config)
 
 		function tab:CreateInfoCard(info)
 			info = info or {}
-			local card = mk("Frame", {
-				BackgroundColor3 = self._library.Theme.Panel,
-				Size = UDim2.new(1, 0, 0, 86),
-				ZIndex = 10,
-				Parent = page,
-			})
-			addCorner(card, 10)
-			addStroke(card, self._library.Theme.Stroke, 0.4)
+			local card = makeBlock(86)
 			addPadding(card, 12, 12, 12, 12)
 
 			local t = mk("TextLabel", {
@@ -1145,7 +1090,7 @@ function Library.new(config)
 				ZIndex = 11,
 				Parent = card,
 			})
-			mk("UITextSizeConstraint", {MaxTextSize = 14, MinTextSize = 11, Parent = t})
+			fitText(t, 14, 11)
 
 			local d = mk("TextLabel", {
 				BackgroundTransparency = 1,
@@ -1161,36 +1106,40 @@ function Library.new(config)
 				ZIndex = 11,
 				Parent = card,
 			})
-			mk("UITextSizeConstraint", {MaxTextSize = 12, MinTextSize = 10, Parent = d})
+			fitText(d, 12, 10)
 			return card
 		end
 
-		self._library._tabs[#self._library._tabs + 1] = tab
-		if not self._library._activeTab then
+		self._tabs[#self._tabs + 1] = tab
+		if not self._activeTab then
 			page.Visible = true
-			button.BackgroundColor3 = self._library.Theme.Accent
-			self._library._activeTab = tab
+			button.BackgroundColor3 = self.Theme.Accent
+			self._activeTab = tab
 		end
 		return tab
 	end
 
-	-- Settings panel content
-	addSectionLabel("Theme presets")
+	-- Settings content
+	addSection("Theme presets")
 	addSettingsButton("Purple", function() applyTheme("Purple") end)
 	addSettingsButton("Blue", function() applyTheme("Blue") end)
 	addSettingsButton("Green", function() applyTheme("Green") end)
 	addSettingsButton("Pink", function() applyTheme("Pink") end)
 
-	addSectionLabel("Window placement")
+	addSection("Window placement")
 	addSettingsButton("Center", function() window:SetPositionPreset("Center") end)
 	addSettingsButton("Left", function() window:SetPositionPreset("Left") end)
 	addSettingsButton("Right", function() window:SetPositionPreset("Right") end)
 	addSettingsButton("Top", function() window:SetPositionPreset("Top") end)
 	addSettingsButton("Bottom", function() window:SetPositionPreset("Bottom") end)
 
-	addSectionLabel("Quick actions")
+	addSection("Quick actions")
 	addSettingsButton("Reset UI Position", function() window:SetPositionPreset("Center") end)
 	addSettingsButton("Hide UI", function() window:Hide() end)
+
+	hideBtn.MouseButton1Click:Connect(hideWindow)
+	floating.MouseButton1Click:Connect(showWindow)
+	settingsBtn.MouseButton1Click:Connect(toggleSettings)
 
 	self.Window = window
 	window:Show()
