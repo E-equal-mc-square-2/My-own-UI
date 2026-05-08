@@ -1,4 +1,4 @@
-```lua
+
 --!strict
 -- KilometresUI / KilometresVoid
 -- Single-file Roblox ModuleScript
@@ -833,4 +833,3 @@ function Library:CreateWindow(config)
 end
 
 return Library
-```
