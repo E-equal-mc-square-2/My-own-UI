@@ -1,261 +1,255 @@
---//=======================================================================================
---// 🌌 NEON PRIME: ELITE MOBILE-FIRST UI FRAMEWORK 🌌
---//=======================================================================================
---// Theme: Dark/Neon Purple/Red Helper | Aesthetic: Premium Futuristic Exploit Overlay
---// Fully Mobile Optimized, Touch Friendly, Swipe Gestures, State Management
---//=======================================================================================
+--//======================================================
+--// NEXUS UI FRAMEWORK - MOBILE FIRST
+--// Premium Exploit-Style UI Library
+--// Single File Production Build
+--//======================================================
 
-local NeonPrime = {
-    Version = "1.0.0",
-    Flags = {},
-    Theme = {},
-    Connections = {},
-    Elements = {},
-    Drawings = {},
-    Instances = {}
-}
+local NexusUI = {}
+NexusUI.__index = NexusUI
+NexusUI.Version = "1.0.0"
 
---//=======================================================================================
---// CORE SERVICES & ENVIRONMENT
---//=======================================================================================
-local CoreGui = game:GetService("CoreGui")
+--//======================================================
+--// SERVICES
+--//======================================================
+
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TextService = game:GetService("TextService")
+local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
-local Stats = game:GetService("Stats")
+local TextService = game:GetService("TextService")
 
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+--//======================================================
+--// CONSTANTS
+--//======================================================
 
-local ProtectGui = protectgui or (syn and syn.protect_gui) or function() end
-local GetHUI = gethui or function() return CoreGui end
+local MOBILE_BUTTON_SIZE = 52
+local MOBILE_TOGGLE_SIZE = 52
+local ANIMATION_SPEED = 0.25
+local NOTIFICATION_DURATION = 5
+local MAX_NOTIFICATIONS = 5
+local DRAG_SMOOTHNESS = 0.15
+local THEME_TRANSITION_SPEED = 0.3
 
---//=======================================================================================
---// STATE & THEME MANAGEMENT
---//=======================================================================================
+--//======================================================
+--// THEME SYSTEM
+--//======================================================
 
-NeonPrime.Theme = {
-    Background = Color3.fromRGB(11, 11, 15),
-    Surface = Color3.fromRGB(18, 18, 25),
-    SurfaceLight = Color3.fromRGB(26, 26, 36),
-    Primary = Color3.fromRGB(168, 85, 247), -- Neon Purple
-    PrimaryDark = Color3.fromRGB(126, 34, 206),
-    AccentRed = Color3.fromRGB(239, 68, 68), -- Helper Red
-    Text = Color3.fromRGB(255, 255, 255),
-    SubText = Color3.fromRGB(156, 163, 175),
-    StrokeLight = Color3.fromRGB(40, 40, 55),
-    StrokeDark = Color3.fromRGB(20, 20, 25),
-    Shadow = Color3.fromRGB(0, 0, 0),
-    
-    Font = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal), -- Montserrat
-    FontRegular = Font.new("rbxassetid://12187365364", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
-    FontBold = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
-    
-    Sizes = {
-        ElementHeight = 48, -- MOBILE FIRST TOUCH TARGET
-        ButtonHeight = 48,
-        Radius = 8,
-        Padding = 12
+local Themes = {
+    Nexus = {
+        Name = "Nexus Purple",
+        Background = Color3.fromRGB(15, 15, 20),
+        BackgroundSecondary = Color3.fromRGB(20, 20, 28),
+        BackgroundTertiary = Color3.fromRGB(25, 25, 35),
+        Primary = Color3.fromRGB(138, 43, 226),
+        PrimaryDark = Color3.fromRGB(108, 33, 196),
+        PrimaryLight = Color3.fromRGB(168, 73, 255),
+        Accent = Color3.fromRGB(220, 20, 60),
+        AccentLight = Color3.fromRGB(255, 50, 90),
+        Text = Color3.fromRGB(245, 245, 250),
+        TextSecondary = Color3.fromRGB(180, 180, 190),
+        TextDisabled = Color3.fromRGB(100, 100, 110),
+        Border = Color3.fromRGB(60, 60, 80),
+        BorderLight = Color3.fromRGB(80, 80, 100),
+        Success = Color3.fromRGB(46, 213, 115),
+        Warning = Color3.fromRGB(255, 159, 67),
+        Error = Color3.fromRGB(255, 71, 87),
+        Shadow = Color3.fromRGB(0, 0, 0),
+        Glow = Color3.fromRGB(138, 43, 226),
+        GlowIntensity = 0.6,
+    },
+    Crimson = {
+        Name = "Crimson Red",
+        Background = Color3.fromRGB(18, 10, 12),
+        BackgroundSecondary = Color3.fromRGB(25, 15, 18),
+        BackgroundTertiary = Color3.fromRGB(32, 20, 24),
+        Primary = Color3.fromRGB(220, 20, 60),
+        PrimaryDark = Color3.fromRGB(180, 10, 50),
+        PrimaryLight = Color3.fromRGB(255, 50, 90),
+        Accent = Color3.fromRGB(138, 43, 226),
+        AccentLight = Color3.fromRGB(168, 73, 255),
+        Text = Color3.fromRGB(250, 245, 245),
+        TextSecondary = Color3.fromRGB(190, 180, 180),
+        TextDisabled = Color3.fromRGB(110, 100, 100),
+        Border = Color3.fromRGB(80, 60, 65),
+        BorderLight = Color3.fromRGB(100, 80, 85),
+        Success = Color3.fromRGB(46, 213, 115),
+        Warning = Color3.fromRGB(255, 159, 67),
+        Error = Color3.fromRGB(255, 71, 87),
+        Shadow = Color3.fromRGB(0, 0, 0),
+        Glow = Color3.fromRGB(220, 20, 60),
+        GlowIntensity = 0.7,
     }
 }
 
---//=======================================================================================
---// UTILITY ENGINE
---//=======================================================================================
+local CurrentTheme = Themes.Nexus
+
+--//======================================================
+--// UTILITY FUNCTIONS
+--//======================================================
 
 local Utility = {}
 
-function Utility:Create(className, properties, children)
-    local inst = Instance.new(className)
-    for i, v in pairs(properties or {}) do
-        if i ~= "Parent" then inst[i] = v end
-    end
-    if children then
-        for _, child in pairs(children) do
-            child.Parent = inst
+function Utility:Create(className, properties)
+    local instance = Instance.new(className)
+    for property, value in pairs(properties) do
+        if property == "Parent" then
+            continue
         end
+        instance[property] = value
     end
-    if properties and properties.Parent then
-        inst.Parent = properties.Parent
+    if properties.Parent then
+        instance.Parent = properties.Parent
     end
-    table.insert(NeonPrime.Instances, inst)
-    return inst
+    return instance
 end
 
-function Utility:AddCorner(parent, radius)
-    return self:Create("UICorner", {
-        CornerRadius = UDim.new(0, radius or NeonPrime.Theme.Sizes.Radius),
-        Parent = parent
-    })
-end
-
-function Utility:AddStroke(parent, color, thickness, transparency)
-    return self:Create("UIStroke", {
-        Color = color or NeonPrime.Theme.StrokeLight,
-        Thickness = thickness or 1,
-        Transparency = transparency or 0,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Parent = parent
-    })
-end
-
-function Utility:AddPadding(parent, all)
-    local p = all or NeonPrime.Theme.Sizes.Padding
-    return self:Create("UIPadding", {
-        PaddingLeft = UDim.new(0, p),
-        PaddingRight = UDim.new(0, p),
-        PaddingTop = UDim.new(0, p),
-        PaddingBottom = UDim.new(0, p),
-        Parent = parent
-    })
-end
-
-function Utility:AddGradient(parent, color1, color2, rotation)
-    return self:Create("UIGradient", {
-        Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, color1),
-            ColorSequenceKeypoint.new(1, color2)
-        },
-        Rotation = rotation or 0,
-        Parent = parent
-    })
-end
-
-function Utility:Tween(instance, properties, duration, style, direction)
-    local info = TweenInfo.new(
-        duration or 0.3,
-        style or Enum.EasingStyle.Quint,
-        direction or Enum.EasingDirection.Out
-    )
-    local tween = TweenService:Create(instance, info, properties)
+function Utility:Tween(instance, properties, duration, easingStyle, easingDirection, callback)
+    duration = duration or ANIMATION_SPEED
+    easingStyle = easingStyle or Enum.EasingStyle.Quad
+    easingDirection = easingDirection or Enum.EasingDirection.Out
+    
+    local tweenInfo = TweenInfo.new(duration, easingStyle, easingDirection)
+    local tween = TweenService:Create(instance, tweenInfo, properties)
+    
+    if callback then
+        tween.Completed:Connect(callback)
+    end
+    
     tween:Play()
     return tween
 end
 
-function Utility:Connection(signal, callback)
-    local connection = signal:Connect(callback)
-    table.insert(NeonPrime.Connections, connection)
-    return connection
-end
-
-function Utility:GetTextBounds(text, font, size, width)
-    local params = Instance.new("GetTextBoundsParams")
-    params.Text = text
-    params.Font = font
-    params.Size = size
-    params.Width = width or math.huge
-    return TextService:GetTextBoundsAsync(params)
-end
-
-function Utility:CreateShadow(parent, blur, intensity)
-    local shadow = self:Create("ImageLabel", {
-        Name = "DropShadow",
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://5554236805",
-        ImageColor3 = NeonPrime.Theme.Shadow,
-        ImageTransparency = intensity or 0.4,
-        ScaleType = Enum.ScaleType.Slice,
-        SliceCenter = Rect.new(23, 23, 277, 277),
-        Size = UDim2.new(1, blur * 2, 1, blur * 2),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        ZIndex = parent.ZIndex - 1,
-        Parent = parent
+function Utility:AddGradient(instance, color1, color2, rotation)
+    rotation = rotation or 90
+    local gradient = self:Create("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, color1),
+            ColorSequenceKeypoint.new(1, color2)
+        }),
+        Rotation = rotation,
+        Parent = instance
     })
+    return gradient
+end
+
+function Utility:AddStroke(instance, color, thickness, transparency)
+    thickness = thickness or 1
+    transparency = transparency or 0
+    local stroke = self:Create("UIStroke", {
+        Color = color,
+        Thickness = thickness,
+        Transparency = transparency,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Parent = instance
+    })
+    return stroke
+end
+
+function Utility:AddCorner(instance, radius)
+    radius = radius or UDim.new(0, 8)
+    local corner = self:Create("UICorner", {
+        CornerRadius = radius,
+        Parent = instance
+    })
+    return corner
+end
+
+function Utility:AddPadding(instance, padding)
+    local pad = self:Create("UIPadding", {
+        PaddingTop = UDim.new(0, padding.Top or padding.All or 0),
+        PaddingBottom = UDim.new(0, padding.Bottom or padding.All or 0),
+        PaddingLeft = UDim.new(0, padding.Left or padding.All or 0),
+        PaddingRight = UDim.new(0, padding.Right or padding.All or 0),
+        Parent = instance
+    })
+    return pad
+end
+
+function Utility:AddShadow(instance, color, transparency, size)
+    color = color or CurrentTheme.Shadow
+    transparency = transparency or 0.7
+    size = size or 20
+    
+    local shadow = self:Create("ImageLabel", {
+        Name = "Shadow",
+        BackgroundTransparency = 1,
+        Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+        ImageColor3 = color,
+        ImageTransparency = transparency,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(10, 10, 118, 118),
+        Size = UDim2.new(1, size * 2, 1, size * 2),
+        Position = UDim2.new(0, -size, 0, -size),
+        ZIndex = instance.ZIndex - 1,
+        Parent = instance
+    })
+    
     return shadow
 end
 
---//=======================================================================================
---// ANIMATION ENGINE & RIPPLE
---//=======================================================================================
-
-local AnimationEngine = {}
-
-function AnimationEngine:CreateRipple(parent, x, y)
-    local absolutePos = parent.AbsolutePosition
-    local absoluteSize = parent.AbsoluteSize
+function Utility:AddGlow(instance, color, intensity)
+    color = color or CurrentTheme.Glow
+    intensity = intensity or CurrentTheme.GlowIntensity
     
-    local relativeX = x - absolutePos.X
-    local relativeY = y - absolutePos.Y
-    
-    local rippleContainer = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0),
+    local glow = self:Create("ImageLabel", {
+        Name = "Glow",
         BackgroundTransparency = 1,
-        ClipsDescendants = true,
-        Parent = parent,
-        ZIndex = parent.ZIndex + 5
-    })
-    
-    Utility:AddCorner(rippleContainer, NeonPrime.Theme.Sizes.Radius)
-    
-    local maxRadius = math.sqrt(absoluteSize.X^2 + absoluteSize.Y^2)
-    
-    local ripple = Utility:Create("Frame", {
-        Size = UDim2.new(0, 0, 0, 0),
-        Position = UDim2.new(0, relativeX, 0, relativeY),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 0.6,
-        ZIndex = parent.ZIndex + 6,
-        Parent = rippleContainer
-    })
-    
-    Utility:AddCorner(ripple, 999)
-    
-    local anim = Utility:Tween(ripple, {
-        Size = UDim2.new(0, maxRadius * 2, 0, maxRadius * 2),
-        BackgroundTransparency = 1
-    }, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    anim.Completed:Connect(function()
-        rippleContainer:Destroy()
-    end)
-end
-
-function AnimationEngine:HoverEffect(element, defaultColor, hoverColor)
-    Utility:Connection(element.MouseEnter, function()
-        Utility:Tween(element, {BackgroundColor3 = hoverColor}, 0.2)
-    end)
-    Utility:Connection(element.MouseLeave, function()
-        Utility:Tween(element, {BackgroundColor3 = defaultColor}, 0.2)
-    end)
-end
-
-function AnimationEngine:Glow(element, color, size, duration)
-    local glow = Utility:Create("ImageLabel", {
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://5028857084",
+        Image = "rbxassetid://5028857472",
         ImageColor3 = color,
-        Size = UDim2.new(1, size, 1, size),
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        ZIndex = element.ZIndex - 1,
-        ImageTransparency = 1,
-        Parent = element
+        ImageTransparency = 1 - intensity,
+        Size = UDim2.new(1, 30, 1, 30),
+        Position = UDim2.new(0, -15, 0, -15),
+        ZIndex = instance.ZIndex - 1,
+        Parent = instance
     })
-    Utility:Tween(glow, {ImageTransparency = 0.5}, duration / 2).Completed:Connect(function()
-        Utility:Tween(glow, {ImageTransparency = 1}, duration / 2).Completed:Connect(function()
-            glow:Destroy()
-        end)
+    
+    return glow
+end
+
+function Utility:RippleEffect(instance, x, y)
+    local ripple = self:Create("Frame", {
+        BackgroundColor3 = CurrentTheme.Primary,
+        BackgroundTransparency = 0.5,
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0, x, 0, y),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        ZIndex = instance.ZIndex + 10,
+        Parent = instance
+    })
+    
+    self:AddCorner(ripple, UDim.new(1, 0))
+    
+    self:Tween(ripple, {
+        Size = UDim2.new(0, 100, 0, 100),
+        BackgroundTransparency = 1
+    }, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, function()
+        ripple:Destroy()
     end)
 end
 
---//=======================================================================================
---// INPUT & DRAG & GESTURE SYSTEM (MOBILE OPTIMIZED)
---//=======================================================================================
-
-local InputSystem = {
-    Connections = {}
-}
-
-function InputSystem:MakeDraggable(frame, dragHandle)
-    local dragging, dragInput, dragStart, startPos
-    local handle = dragHandle or frame
-
-    Utility:Connection(handle.InputBegan, function(input)
+function Utility:MakeDraggable(frame, handle)
+    handle = handle or frame
+    
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        local targetPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        
+        Utility:Tween(frame, {Position = targetPos}, DRAG_SMOOTHNESS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    end
+    
+    handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
@@ -268,1550 +262,2354 @@ function InputSystem:MakeDraggable(frame, dragHandle)
             end)
         end
     end)
-
-    Utility:Connection(handle.InputChanged, function(input)
+    
+    handle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-
-    Utility:Connection(UserInputService.InputChanged, function(input)
+    
+    UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            Utility:Tween(frame, {
-                Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            }, 0.08, Enum.EasingStyle.Linear)
+            update(input)
         end
     end)
 end
 
-function InputSystem:BindGesture(frame, gestureType, callback)
-    local startPos = nil
-    local threshold = 50
-    
-    Utility:Connection(frame.InputBegan, function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            startPos = input.Position
-        end
-    end)
-    
-    Utility:Connection(frame.InputEnded, function(input)
-        if not startPos then return end
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local delta = input.Position - startPos
-            if gestureType == "SwipeDown" and delta.Y > threshold and math.abs(delta.X) < threshold then
-                callback()
-            elseif gestureType == "SwipeUp" and delta.Y < -threshold and math.abs(delta.X) < threshold then
-                callback()
-            end
-            startPos = nil
-        end
-    end)
+function Utility:GetTextSize(text, font, fontSize)
+    local textSize = TextService:GetTextSize(
+        text,
+        fontSize,
+        font,
+        Vector2.new(math.huge, math.huge)
+    )
+    return textSize
 end
 
---//=======================================================================================
---// NOTIFICATION SYSTEM
---//=======================================================================================
+function Utility:IsOnMobile()
+    return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+end
 
-local NotificationSystem = {
-    Queue = {},
-    Active = 0,
-    MaxActive = 5
-}
+--//======================================================
+--// CONNECTION MANAGER
+--//======================================================
 
-local NotifyContainer = Utility:Create("Frame", {
-    Name = "NotifyContainer",
-    Size = UDim2.new(0, 320, 1, -40),
-    Position = UDim2.new(1, -340, 0, 20),
-    BackgroundTransparency = 1,
-    ZIndex = 9999
-})
+local ConnectionManager = {}
+ConnectionManager.Connections = {}
 
-local NotifyLayout = Utility:Create("UIListLayout", {
-    SortOrder = Enum.SortOrder.LayoutOrder,
-    VerticalAlignment = Enum.VerticalAlignment.Bottom,
-    Padding = UDim.new(0, 10),
-    Parent = NotifyContainer
-})
+function ConnectionManager:Add(connection)
+    table.insert(self.Connections, connection)
+    return connection
+end
 
-function NotificationSystem:Notify(title, text, duration, typeIcon)
-    duration = duration or 3
-    local color = NeonPrime.Theme.Primary
-    if typeIcon == "error" then color = NeonPrime.Theme.AccentRed end
-    if typeIcon == "success" then color = Color3.fromRGB(34, 197, 94) end
+function ConnectionManager:DisconnectAll()
+    for _, connection in ipairs(self.Connections) do
+        if connection.Connected then
+            connection:Disconnect()
+        end
+    end
+    self.Connections = {}
+end
 
-    local notif = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 0), -- Starts collapsed
-        BackgroundColor3 = NeonPrime.Theme.Surface,
-        BackgroundTransparency = 1,
-        ClipsDescendants = true,
-        Parent = NotifyContainer
-    })
-    
-    local notifCard = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = NeonPrime.Theme.Surface,
-        Position = UDim2.new(1, 50, 0, 0),
-        Parent = notif
-    })
-    
-    Utility:AddCorner(notifCard)
-    Utility:AddStroke(notifCard, color, 1, 0.5)
-    Utility:CreateShadow(notifCard, 15, 0.3)
-    
-    local titleLabel = Utility:Create("TextLabel", {
-        Size = UDim2.new(1, -40, 0, 20),
-        Position = UDim2.new(0, 12, 0, 12),
-        BackgroundTransparency = 1,
-        Text = title,
-        TextColor3 = color,
-        FontFace = NeonPrime.Theme.FontBold,
-        TextSize = 16,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = notifCard
-    })
-    
-    local textLabel = Utility:Create("TextLabel", {
-        Size = UDim2.new(1, -24, 0, 0),
-        Position = UDim2.new(0, 12, 0, 36),
-        BackgroundTransparency = 1,
-        Text = text,
-        TextColor3 = NeonPrime.Theme.SubText,
-        FontFace = NeonPrime.Theme.FontRegular,
-        TextSize = 14,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = notifCard
-    })
-    
-    -- Calc height
-    local bounds = Utility:GetTextBounds(text, NeonPrime.Theme.FontRegular, 14, 296)
-    local totalHeight = 36 + bounds.Y + 12
-    
-    -- Progress bar
-    local progressBg = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 3),
-        Position = UDim2.new(0, 0, 1, -3),
-        BackgroundColor3 = NeonPrime.Theme.Background,
-        BorderSizePixel = 0,
-        Parent = notifCard
-    })
-    
-    local progressBar = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = color,
-        BorderSizePixel = 0,
-        Parent = progressBg
-    })
-    Utility:AddGradient(progressBar, color, NeonPrime.Theme.PrimaryDark, 0)
-    
-    -- Animation in
-    Utility:Tween(notif, {Size = UDim2.new(1, 0, 0, totalHeight)}, 0.3, Enum.EasingStyle.Back)
-    task.wait(0.1)
-    Utility:Tween(notifCard, {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0}, 0.4, Enum.EasingStyle.Quint)
-    
-    -- Progress animation
-    Utility:Tween(progressBar, {Size = UDim2.new(0, 0, 1, 0)}, duration, Enum.EasingStyle.Linear)
-    
-    task.delay(duration, function()
-        local out = Utility:Tween(notifCard, {Position = UDim2.new(1, 50, 0, 0), BackgroundTransparency = 1}, 0.3)
-        out.Completed:Connect(function()
-            local collapse = Utility:Tween(notif, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-            collapse.Completed:Connect(function()
-                notif:Destroy()
-            end)
+--//======================================================
+--// CONFIG SYSTEM
+--//======================================================
+
+local ConfigSystem = {}
+ConfigSystem.Flags = {}
+ConfigSystem.AutoSaveEnabled = true
+ConfigSystem.SaveFileName = "NexusUI_Config.json"
+
+function ConfigSystem:SetFlag(flag, value)
+    self.Flags[flag] = value
+    if self.AutoSaveEnabled then
+        task.delay(1, function()
+            self:SaveConfig()
         end)
-    end)
+    end
 end
 
---//=======================================================================================
---// WATERMARK & FPS SYSTEM
---//=======================================================================================
+function ConfigSystem:GetFlag(flag, default)
+    return self.Flags[flag] or default
+end
 
-local InfoOverlay = {
-    Container = nil,
-    TextLabel = nil
-}
+function ConfigSystem:SaveConfig()
+    local success, result = pcall(function()
+        local data = HttpService:JSONEncode(self.Flags)
+        writefile(self.SaveFileName, data)
+        return true
+    end)
+    return success
+end
 
-function InfoOverlay:Init(parentGui)
+function ConfigSystem:LoadConfig()
+    local success, result = pcall(function()
+        if isfile(self.SaveFileName) then
+            local data = readfile(self.SaveFileName)
+            self.Flags = HttpService:JSONDecode(data)
+            return true
+        end
+        return false
+    end)
+    return success
+end
+
+function ConfigSystem:DeleteConfig()
+    local success = pcall(function()
+        if isfile(self.SaveFileName) then
+            delfile(self.SaveFileName)
+        end
+    end)
+    return success
+end
+
+--//======================================================
+--// NOTIFICATION SYSTEM
+--//======================================================
+
+local NotificationSystem = {}
+NotificationSystem.Notifications = {}
+NotificationSystem.Container = nil
+
+function NotificationSystem:Initialize(parent)
     self.Container = Utility:Create("Frame", {
-        Size = UDim2.new(0, 0, 0, 30),
-        Position = UDim2.new(0, 20, 0, 20),
-        BackgroundColor3 = NeonPrime.Theme.Surface,
-        BackgroundTransparency = 0.2,
-        ClipsDescendants = true,
-        Parent = parentGui
-    })
-    Utility:AddCorner(self.Container, 6)
-    Utility:AddStroke(self.Container, NeonPrime.Theme.Primary, 1, 0.4)
-    Utility:AddGradient(self.Container, NeonPrime.Theme.Surface, NeonPrime.Theme.Background, 90)
-    
-    self.TextLabel = Utility:Create("TextLabel", {
-        Size = UDim2.new(1, -20, 1, 0),
-        Position = UDim2.new(0, 10, 0, 0),
+        Name = "NotificationContainer",
         BackgroundTransparency = 1,
-        Text = "Neon Prime | Initializing...",
-        TextColor3 = NeonPrime.Theme.Text,
-        FontFace = NeonPrime.Theme.Font,
-        TextSize = 14,
-        RichText = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        Size = UDim2.new(0, 320, 1, 0),
+        Position = UDim2.new(1, -330, 0, 10),
+        ZIndex = 10000,
+        Parent = parent
+    })
+    
+    Utility:Create("UIListLayout", {
+        Padding = UDim.new(0, 10),
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        Parent = self.Container
+    })
+end
+
+function NotificationSystem:Send(config)
+    if #self.Notifications >= MAX_NOTIFICATIONS then
+        local oldest = self.Notifications[1]
+        if oldest then
+            self:Dismiss(oldest)
+        end
+    end
+    
+    local title = config.Title or "Notification"
+    local description = config.Description or ""
+    local duration = config.Duration or NOTIFICATION_DURATION
+    local icon = config.Icon or "rbxassetid://3944703587"
+    local type = config.Type or "Info"
+    
+    local typeColors = {
+        Info = CurrentTheme.Primary,
+        Success = CurrentTheme.Success,
+        Warning = CurrentTheme.Warning,
+        Error = CurrentTheme.Error
+    }
+    
+    local accentColor = typeColors[type] or CurrentTheme.Primary
+    
+    local notification = Utility:Create("Frame", {
+        Name = "Notification",
+        BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+        Size = UDim2.new(1, 0, 0, 0),
+        ClipsDescendants = true,
+        ZIndex = 10001,
         Parent = self.Container
     })
     
-    Utility:Connection(RunService.RenderStepped, function()
-        local fps = math.floor(1 / RunService.RenderStepped:Wait())
-        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        local text = string.format("<b><font color='#A855F7'>NEON PRIME</font></b> | %s | %d FPS | %dms", NeonPrime.Version, fps, ping)
-        
-        self.TextLabel.Text = text
-        local bounds = Utility:GetTextBounds(text, NeonPrime.Theme.Font, 14, 1000)
-        self.Container.Size = UDim2.new(0, bounds.X + 24, 0, 30)
+    Utility:AddCorner(notification, UDim.new(0, 10))
+    Utility:AddStroke(notification, CurrentTheme.Border, 1, 0.3)
+    Utility:AddGlow(notification, accentColor, 0.4)
+    
+    local accent = Utility:Create("Frame", {
+        Name = "Accent",
+        BackgroundColor3 = accentColor,
+        Size = UDim2.new(0, 4, 1, 0),
+        BorderSizePixel = 0,
+        Parent = notification
+    })
+    
+    Utility:AddCorner(accent, UDim.new(0, 2))
+    
+    local iconFrame = Utility:Create("ImageLabel", {
+        Name = "Icon",
+        BackgroundTransparency = 1,
+        Image = icon,
+        ImageColor3 = accentColor,
+        Size = UDim2.new(0, 32, 0, 32),
+        Position = UDim2.new(0, 15, 0, 15),
+        Parent = notification
+    })
+    
+    local titleLabel = Utility:Create("TextLabel", {
+        Name = "Title",
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        Text = title,
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Position = UDim2.new(0, 55, 0, 15),
+        Size = UDim2.new(1, -100, 0, 18),
+        Parent = notification
+    })
+    
+    local descLabel = Utility:Create("TextLabel", {
+        Name = "Description",
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Text = description,
+        TextColor3 = CurrentTheme.TextSecondary,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true,
+        Position = UDim2.new(0, 55, 0, 35),
+        Size = UDim2.new(1, -100, 0, 30),
+        Parent = notification
+    })
+    
+    local closeButton = Utility:Create("TextButton", {
+        Name = "Close",
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextColor3 = CurrentTheme.TextSecondary,
+        TextSize = 20,
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -35, 0, 10),
+        Parent = notification
+    })
+    
+    local progressBar = Utility:Create("Frame", {
+        Name = "Progress",
+        BackgroundColor3 = accentColor,
+        Size = UDim2.new(1, 0, 0, 3),
+        Position = UDim2.new(0, 0, 1, -3),
+        BorderSizePixel = 0,
+        Parent = notification
+    })
+    
+    table.insert(self.Notifications, notification)
+    
+    Utility:Tween(notification, {Size = UDim2.new(1, 0, 0, 80)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    
+    Utility:Tween(progressBar, {Size = UDim2.new(0, 0, 0, 3)}, duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+    
+    task.delay(duration, function()
+        self:Dismiss(notification)
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        self:Dismiss(notification)
+    end)
+    
+    return notification
+end
+
+function NotificationSystem:Dismiss(notification)
+    if not notification or not notification.Parent then return end
+    
+    Utility:Tween(notification, {
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1
+    }, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+        for i, notif in ipairs(self.Notifications) do
+            if notif == notification then
+                table.remove(self.Notifications, i)
+                break
+            end
+        end
+        notification:Destroy()
     end)
 end
 
---//=======================================================================================
---// CONFIG SYSTEM
---//=======================================================================================
+--//======================================================
+--// WINDOW CONSTRUCTOR
+--//======================================================
 
-local ConfigSystem = {
-    FolderName = "NeonPrimeConfigs",
-    FileExtension = ".json",
-    AutoSave = true
-}
-
-function ConfigSystem:Init()
-    if makefolder and isfolder and not isfolder(self.FolderName) then
-        makefolder(self.FolderName)
-    end
-end
-
-function ConfigSystem:Save(name)
-    if not writefile then return false end
-    local data = {}
-    for key, flag in pairs(NeonPrime.Flags) do
-        data[key] = flag
-    end
-    local success, encoded = pcall(HttpService.JSONEncode, HttpService, data)
-    if success then
-        writefile(self.FolderName .. "/" .. name .. self.FileExtension, encoded)
-        NotificationSystem:Notify("Config Saved", "Successfully saved config: " .. name, 3, "success")
-        return true
-    end
-    return false
-end
-
-function ConfigSystem:Load(name)
-    if not readfile or not isfile then return false end
-    local path = self.FolderName .. "/" .. name .. self.FileExtension
-    if isfile(path) then
-        local success, decoded = pcall(HttpService.JSONDecode, HttpService, readfile(path))
-        if success then
-            for key, value in pairs(decoded) do
-                if NeonPrime.Flags[key] ~= nil then
-                    NeonPrime.Flags[key] = value
-                    -- Note: Updating UI elements happens via events in elements
-                end
-            end
-            NotificationSystem:Notify("Config Loaded", "Successfully loaded config: " .. name, 3, "success")
-            return true
-        end
-    end
-    return false
-end
-
---//=======================================================================================
---// MAIN LIBRARY & WINDOW SYSTEM
---//=======================================================================================
-
-local Library = {
-    Windows = {},
-    ActiveWindow = nil
-}
-
-function Library:CreateWindow(options)
+function NexusUI:CreateWindow(config)
     local Window = {
-        Title = options.Title or "Neon Prime",
-        Size = options.Size or UDim2.new(0, 650, 0, 450),
         Tabs = {},
-        ActiveTab = nil,
-        Toggled = true,
-        Minimized = false
+        CurrentTab = nil,
+        Minimized = false,
+        Visible = true,
+        Elements = {}
     }
     
-    local ScreenGui = Utility:Create("ScreenGui", {
-        Name = "NeonPrime_" .. HttpService:GenerateGUID(false),
+    --//======================================================
+    --// SCREEN GUI SETUP
+    --//======================================================
+    
+    local screenGui = Utility:Create("ScreenGui", {
+        Name = "NexusUI",
         ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Global,
-        IgnoreGuiInset = true
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        Parent = CoreGui
     })
     
-    ProtectGui(ScreenGui)
-    ScreenGui.Parent = GetHUI()
-    NotifyContainer.Parent = ScreenGui
-    InfoOverlay:Init(ScreenGui)
+    if gethui then
+        screenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(screenGui)
+        screenGui.Parent = CoreGui
+    end
     
-    -- FAB (Floating Action Button for Mobile Reopen)
-    local FAB = Utility:Create("ImageButton", {
-        Size = UDim2.new(0, 56, 0, 56),
-        Position = UDim2.new(0.5, -28, 0, -100), -- Hidden initially
-        BackgroundColor3 = NeonPrime.Theme.Surface,
-        Image = "rbxassetid://11326670020", -- Planet/Orb icon
-        ImageColor3 = NeonPrime.Theme.Primary,
-        Parent = ScreenGui,
-        ZIndex = 100
+    --//======================================================
+    --// BLUR EFFECT
+    --//======================================================
+    
+    local blur = Utility:Create("BlurEffect", {
+        Name = "NexusBlur",
+        Size = 0,
+        Parent = game.Lighting
     })
-    Utility:AddCorner(FAB, 28)
-    Utility:AddStroke(FAB, NeonPrime.Theme.Primary, 2, 0)
-    Utility:CreateShadow(FAB, 20, 0.5)
-    InputSystem:MakeDraggable(FAB)
     
-    -- Main Window
-    local MainFrame = Utility:Create("Frame", {
-        Size = Window.Size,
-        Position = UDim2.new(0.5, -Window.Size.X.Offset/2, 0.5, -Window.Size.Y.Offset/2),
-        BackgroundColor3 = NeonPrime.Theme.Background,
-        ClipsDescendants = false,
-        Parent = ScreenGui,
-        ZIndex = 10
-    })
-    Utility:AddCorner(MainFrame)
-    Utility:AddStroke(MainFrame, NeonPrime.Theme.StrokeLight, 1, 0)
-    Utility:CreateShadow(MainFrame, 40, 0.6)
+    Utility:Tween(blur, {Size = 10}, 0.5)
     
-    -- Inner Container for Clipping
-    local InnerFrame = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
+    --//======================================================
+    --// NOTIFICATION SYSTEM INIT
+    --//======================================================
+    
+    NotificationSystem:Initialize(screenGui)
+    
+    --//======================================================
+    --// MAIN WINDOW FRAME
+    --//======================================================
+    
+    local mainFrame = Utility:Create("Frame", {
+        Name = "MainFrame",
+        BackgroundColor3 = CurrentTheme.Background,
+        Size = UDim2.new(0, 600, 0, 450),
+        Position = UDim2.new(0.5, -300, 0.5, -225),
         ClipsDescendants = true,
-        Parent = MainFrame
-    })
-    Utility:AddCorner(InnerFrame)
-    
-    -- Topbar
-    local Topbar = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 48),
-        BackgroundColor3 = NeonPrime.Theme.Surface,
-        BorderSizePixel = 0,
-        Parent = InnerFrame,
-        ZIndex = 12
-    })
-    Utility:AddGradient(Topbar, NeonPrime.Theme.SurfaceLight, NeonPrime.Theme.Surface, 90)
-    
-    local TopbarLine = Utility:Create("Frame", {
-        Size = UDim2.new(1, 0, 0, 1),
-        Position = UDim2.new(0, 0, 1, -1),
-        BackgroundColor3 = NeonPrime.Theme.StrokeLight,
-        BorderSizePixel = 0,
-        Parent = Topbar
+        ZIndex = 1,
+        Parent = screenGui
     })
     
-    local Title = Utility:Create("TextLabel", {
-        Size = UDim2.new(1, -100, 1, 0),
-        Position = UDim2.new(0, 20, 0, 0),
+    Utility:AddCorner(mainFrame, UDim.new(0, 12))
+    Utility:AddStroke(mainFrame, CurrentTheme.Border, 1.5, 0.2)
+    Utility:AddGlow(mainFrame, CurrentTheme.Glow, 0.3)
+    
+    local mainShadow = Utility:Create("ImageLabel", {
+        Name = "Shadow",
         BackgroundTransparency = 1,
-        Text = string.format("<b><font color='#A855F7'>%s</font></b>", Window.Title),
-        TextColor3 = NeonPrime.Theme.Text,
-        FontFace = NeonPrime.Theme.FontBold,
+        Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.5,
+        Size = UDim2.new(1, 40, 1, 40),
+        Position = UDim2.new(0, -20, 0, -20),
+        ZIndex = 0,
+        Parent = mainFrame
+    })
+    
+    Utility:AddCorner(mainShadow, UDim.new(0, 12))
+    
+    --//======================================================
+    --// HEADER
+    --//======================================================
+    
+    local header = Utility:Create("Frame", {
+        Name = "Header",
+        BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+        Size = UDim2.new(1, 0, 0, 60),
+        BorderSizePixel = 0,
+        ZIndex = 2,
+        Parent = mainFrame
+    })
+    
+    Utility:AddCorner(header, UDim.new(0, 12))
+    
+    local headerAccent = Utility:Create("Frame", {
+        Name = "Accent",
+        BackgroundColor3 = CurrentTheme.Primary,
+        Size = UDim2.new(1, 0, 0, 3),
+        Position = UDim2.new(0, 0, 1, -3),
+        BorderSizePixel = 0,
+        ZIndex = 3,
+        Parent = header
+    })
+    
+    Utility:AddGradient(headerAccent, CurrentTheme.Primary, CurrentTheme.PrimaryLight, 90)
+    
+    local headerTitle = Utility:Create("TextLabel", {
+        Name = "Title",
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        Text = config.Name or "Nexus UI",
+        TextColor3 = CurrentTheme.Text,
         TextSize = 18,
-        RichText = true,
         TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = Topbar
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(0, 300, 1, -3),
+        ZIndex = 3,
+        Parent = header
     })
     
-    -- Mobile Swipe Gestures on Topbar
-    InputSystem:MakeDraggable(MainFrame, Topbar)
-    InputSystem:BindGesture(Topbar, "SwipeDown", function() Window:ToggleMinimize() end)
-    InputSystem:BindGesture(Topbar, "SwipeUp", function() if Window.Minimized then Window:ToggleMinimize() end end)
-    
-    -- Close & Minimize Buttons
-    local CloseBtn = Utility:Create("ImageButton", {
-        Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(1, -40, 0.5, -16),
+    local headerSubtitle = Utility:Create("TextLabel", {
+        Name = "Subtitle",
         BackgroundTransparency = 1,
-        Image = "rbxassetid://10747384394",
-        ImageColor3 = NeonPrime.Theme.SubText,
-        Parent = Topbar
+        Font = Enum.Font.Gotham,
+        Text = "v" .. NexusUI.Version,
+        TextColor3 = CurrentTheme.TextSecondary,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Position = UDim2.new(0, 20, 0, 30),
+        Size = UDim2.new(0, 200, 0, 20),
+        ZIndex = 3,
+        Parent = header
     })
     
-    local MinimizeBtn = Utility:Create("ImageButton", {
-        Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(1, -80, 0.5, -16),
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://10747381980",
-        ImageColor3 = NeonPrime.Theme.SubText,
-        Parent = Topbar
+    --//======================================================
+    --// HEADER BUTTONS
+    --//======================================================
+    
+    local minimizeButton = Utility:Create("TextButton", {
+        Name = "Minimize",
+        BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+        Font = Enum.Font.GothamBold,
+        Text = "−",
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 18,
+        Size = UDim2.new(0, 36, 0, 36),
+        Position = UDim2.new(1, -120, 0.5, -18),
+        ZIndex = 3,
+        Parent = header
     })
     
-    -- Sidebar
-    local Sidebar = Utility:Create("Frame", {
-        Size = UDim2.new(0, 180, 1, -48),
-        Position = UDim2.new(0, 0, 0, 48),
-        BackgroundColor3 = NeonPrime.Theme.Surface,
+    Utility:AddCorner(minimizeButton, UDim.new(0, 8))
+    Utility:AddStroke(minimizeButton, CurrentTheme.Border, 1, 0.5)
+    
+    local maximizeButton = Utility:Create("TextButton", {
+        Name = "Maximize",
+        BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+        Font = Enum.Font.GothamBold,
+        Text = "□",
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 14,
+        Size = UDim2.new(0, 36, 0, 36),
+        Position = UDim2.new(1, -78, 0.5, -18),
+        ZIndex = 3,
+        Parent = header
+    })
+    
+    Utility:AddCorner(maximizeButton, UDim.new(0, 8))
+    Utility:AddStroke(maximizeButton, CurrentTheme.Border, 1, 0.5)
+    
+    local closeButton = Utility:Create("TextButton", {
+        Name = "Close",
+        BackgroundColor3 = CurrentTheme.Accent,
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 20,
+        Size = UDim2.new(0, 36, 0, 36),
+        Position = UDim2.new(1, -36, 0.5, -18),
+        ZIndex = 3,
+        Parent = header
+    })
+    
+    Utility:AddCorner(closeButton, UDim.new(0, 8))
+    
+    --//======================================================
+    --// TAB CONTAINER
+    --//======================================================
+    
+    local tabContainer = Utility:Create("Frame", {
+        Name = "TabContainer",
+        BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+        Size = UDim2.new(0, 150, 1, -60),
+        Position = UDim2.new(0, 0, 0, 60),
         BorderSizePixel = 0,
-        Parent = InnerFrame,
-        ZIndex = 11
+        ZIndex = 2,
+        Parent = mainFrame
     })
     
-    local SidebarLine = Utility:Create("Frame", {
+    local tabSeparator = Utility:Create("Frame", {
+        Name = "Separator",
+        BackgroundColor3 = CurrentTheme.Border,
         Size = UDim2.new(0, 1, 1, 0),
         Position = UDim2.new(1, -1, 0, 0),
-        BackgroundColor3 = NeonPrime.Theme.StrokeLight,
         BorderSizePixel = 0,
-        Parent = Sidebar
+        ZIndex = 3,
+        Parent = tabContainer
     })
     
-    local TabContainer = Utility:Create("ScrollingFrame", {
-        Size = UDim2.new(1, 0, 1, -20),
-        Position = UDim2.new(0, 0, 0, 10),
+    local tabList = Utility:Create("ScrollingFrame", {
+        Name = "TabList",
         BackgroundTransparency = 1,
-        ScrollBarThickness = 0,
-        ScrollingDirection = Enum.ScrollingDirection.Y,
-        Parent = Sidebar
+        Size = UDim2.new(1, 0, 1, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = CurrentTheme.Primary,
+        BorderSizePixel = 0,
+        ZIndex = 3,
+        Parent = tabContainer
     })
     
-    local TabListLayout = Utility:Create("UIListLayout", {
+    local tabLayout = Utility:Create("UIListLayout", {
+        Padding = UDim.new(0, 5),
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8),
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        Parent = TabContainer
+        Parent = tabList
     })
     
-    -- Content Container
-    local ContentContainer = Utility:Create("Frame", {
-        Size = UDim2.new(1, -180, 1, -48),
-        Position = UDim2.new(0, 180, 0, 48),
-        BackgroundTransparency = 1,
-        Parent = InnerFrame
-    })
+    Utility:AddPadding(tabList, {All = 10})
     
-    -- Methods
-    function Window:ToggleMinimize()
-        self.Minimized = not self.Minimized
-        if self.Minimized then
-            Utility:Tween(MainFrame, {Size = UDim2.new(0, Window.Size.X.Offset, 0, 48)}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In)
-            Utility:Tween(MinimizeBtn, {Rotation = 180}, 0.3)
-            Sidebar.Visible = false
-            ContentContainer.Visible = false
-        else
-            Utility:Tween(MainFrame, {Size = Window.Size}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-            Utility:Tween(MinimizeBtn, {Rotation = 0}, 0.3)
-            task.wait(0.2)
-            Sidebar.Visible = true
-            ContentContainer.Visible = true
-        end
-    end
-    
-    function Window:ToggleUI(state)
-        if state == nil then self.Toggled = not self.Toggled else self.Toggled = state end
-        
-        if self.Toggled then
-            ScreenGui.Enabled = true
-            Utility:Tween(MainFrame, {Size = Window.Size, BackgroundTransparency = 0}, 0.4, Enum.EasingStyle.Quint)
-            Utility:Tween(FAB, {Position = UDim2.new(0.5, -28, 0, -100)}, 0.3)
-        else
-            local t = Utility:Tween(MainFrame, {Size = UDim2.new(0,0,0,0), BackgroundTransparency = 1}, 0.4, Enum.EasingStyle.Quint)
-            Utility:Tween(FAB, {Position = UDim2.new(0.5, -28, 0, 40)}, 0.5, Enum.EasingStyle.Back)
-            t.Completed:Connect(function()
-                if not self.Toggled then ScreenGui.Enabled = false; FAB.Parent.Enabled = true end
-            end)
-        end
-    end
-    
-    Utility:Connection(CloseBtn.MouseButton1Click, function() Window:ToggleUI(false) end)
-    Utility:Connection(MinimizeBtn.MouseButton1Click, function() Window:ToggleMinimize() end)
-    Utility:Connection(FAB.MouseButton1Click, function() Window:ToggleUI(true) end)
-    
-    -- Keyboard Toggle
-    Utility:Connection(UserInputService.InputBegan, function(input, gpe)
-        if gpe then return end
-        if input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
-            Window:ToggleUI()
-        end
+    tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tabList.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 20)
     end)
     
-    --//=======================================================================================
-    --// TAB SYSTEM
-    --//=======================================================================================
+    --//======================================================
+    --// CONTENT CONTAINER
+    --//======================================================
     
-    function Window:CreateTab(options)
+    local contentContainer = Utility:Create("Frame", {
+        Name = "ContentContainer",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -150, 1, -60),
+        Position = UDim2.new(0, 150, 0, 60),
+        ZIndex = 2,
+        Parent = mainFrame
+    })
+    
+    --//======================================================
+    --// FLOATING REOPEN BUTTON
+    --//======================================================
+    
+    local reopenButton = Utility:Create("TextButton", {
+        Name = "ReopenButton",
+        BackgroundColor3 = CurrentTheme.Primary,
+        Font = Enum.Font.GothamBold,
+        Text = "☰",
+        TextColor3 = CurrentTheme.Text,
+        TextSize = 20,
+        Size = UDim2.new(0, 60, 0, 60),
+        Position = UDim2.new(0, 20, 0, 20),
+        Visible = false,
+        ZIndex = 10000,
+        Parent = screenGui
+    })
+    
+    Utility:AddCorner(reopenButton, UDim.new(0, 12))
+    Utility:AddStroke(reopenButton, CurrentTheme.Border, 2, 0.3)
+    Utility:AddGlow(reopenButton, CurrentTheme.Glow, 0.5)
+    
+    Utility:MakeDraggable(reopenButton)
+    
+    --//======================================================
+    --// WINDOW FUNCTIONS
+    --//======================================================
+    
+    function Window:Toggle()
+        self.Visible = not self.Visible
+        mainFrame.Visible = self.Visible
+        reopenButton.Visible = not self.Visible
+        
+        if self.Visible then
+            Utility:Tween(mainFrame, {Size = UDim2.new(0, 600, 0, 450)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            Utility:Tween(blur, {Size = 10}, 0.3)
+        else
+            Utility:Tween(blur, {Size = 0}, 0.3)
+        end
+    end
+    
+    function Window:Minimize()
+        self.Minimized = not self.Minimized
+        
+        if self.Minimized then
+            Utility:Tween(mainFrame, {Size = UDim2.new(0, 600, 0, 60)}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            minimizeButton.Text = "+"
+        else
+            Utility:Tween(mainFrame, {Size = UDim2.new(0, 600, 0, 450)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            minimizeButton.Text = "−"
+        end
+    end
+    
+    function Window:SetTheme(themeName)
+        if Themes[themeName] then
+            local oldTheme = CurrentTheme
+            CurrentTheme = Themes[themeName]
+            
+            -- Animate theme transition
+            local function updateColor(instance, property, newColor)
+                if instance and instance[property] then
+                    Utility:Tween(instance, {[property] = newColor}, THEME_TRANSITION_SPEED)
+                end
+            end
+            
+            updateColor(mainFrame, "BackgroundColor3", CurrentTheme.Background)
+            updateColor(header, "BackgroundColor3", CurrentTheme.BackgroundSecondary)
+            updateColor(headerAccent, "BackgroundColor3", CurrentTheme.Primary)
+            updateColor(tabContainer, "BackgroundColor3", CurrentTheme.BackgroundSecondary)
+            updateColor(closeButton, "BackgroundColor3", CurrentTheme.Accent)
+            updateColor(reopenButton, "BackgroundColor3", CurrentTheme.Primary)
+            
+            NotificationSystem:Send({
+                Title = "Theme Changed",
+                Description = "Switched to " .. CurrentTheme.Name,
+                Type = "Success",
+                Duration = 3
+            })
+        end
+    end
+    
+    --//======================================================
+    --// BUTTON EVENTS
+    --//======================================================
+    
+    closeButton.MouseButton1Click:Connect(function()
+        Utility:RippleEffect(closeButton, closeButton.AbsoluteSize.X / 2, closeButton.AbsoluteSize.Y / 2)
+        Window:Toggle()
+    end)
+    
+    minimizeButton.MouseButton1Click:Connect(function()
+        Utility:RippleEffect(minimizeButton, minimizeButton.AbsoluteSize.X / 2, minimizeButton.AbsoluteSize.Y / 2)
+        Window:Minimize()
+    end)
+    
+    reopenButton.MouseButton1Click:Connect(function()
+        Utility:RippleEffect(reopenButton, reopenButton.AbsoluteSize.X / 2, reopenButton.AbsoluteSize.Y / 2)
+        Window:Toggle()
+    end)
+    
+    --//======================================================
+    --// MAKE DRAGGABLE
+    --//======================================================
+    
+    Utility:MakeDraggable(mainFrame, header)
+    
+    --//======================================================
+    --// MOBILE GESTURES
+    --//======================================================
+    
+    if Utility:IsOnMobile() then
+        local swipeStart = nil
+        local swipeStartPos = nil
+        
+        header.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                swipeStart = tick()
+                swipeStartPos = input.Position
+            end
+        end)
+        
+        header.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch and swipeStart then
+                local swipeDuration = tick() - swipeStart
+                local swipeDelta = input.Position - swipeStartPos
+                
+                if swipeDuration < 0.3 and math.abs(swipeDelta.Y) > 50 then
+                    if swipeDelta.Y > 0 then
+                        Window:Minimize()
+                    else
+                        if Window.Minimized then
+                            Window:Minimize()
+                        end
+                    end
+                end
+                
+                swipeStart = nil
+                swipeStartPos = nil
+            end
+        end)
+    end
+    
+    --//======================================================
+    --// TAB SYSTEM
+    --//======================================================
+    
+    function Window:CreateTab(tabConfig)
         local Tab = {
-            Name = options.Name or "Tab",
-            Icon = options.Icon or "rbxassetid://10747383136",
-            Sections = {}
+            Name = tabConfig.Name or "Tab",
+            Icon = tabConfig.Icon or "rbxassetid://3944703587",
+            Sections = {},
+            Elements = {}
         }
         
-        local TabButton = Utility:Create("TextButton", {
-            Size = UDim2.new(1, -20, 0, 40),
-            BackgroundColor3 = NeonPrime.Theme.Background,
-            BackgroundTransparency = 1,
-            Text = "",
-            AutoButtonColor = false,
-            Parent = TabContainer
-        })
-        Utility:AddCorner(TabButton, 8)
+        --//======================================================
+        --// TAB BUTTON
+        --//======================================================
         
-        local TabIcon = Utility:Create("ImageLabel", {
-            Size = UDim2.new(0, 20, 0, 20),
-            Position = UDim2.new(0, 12, 0.5, -10),
+        local tabButton = Utility:Create("TextButton", {
+            Name = "TabButton",
+            BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+            Size = UDim2.new(1, 0, 0, 45),
+            ZIndex = 4,
+            AutoButtonColor = false,
+            Text = "",
+            Parent = tabList
+        })
+        
+        Utility:AddCorner(tabButton, UDim.new(0, 8))
+        
+        local tabIcon = Utility:Create("ImageLabel", {
+            Name = "Icon",
             BackgroundTransparency = 1,
             Image = Tab.Icon,
-            ImageColor3 = NeonPrime.Theme.SubText,
-            Parent = TabButton
+            ImageColor3 = CurrentTheme.TextSecondary,
+            Size = UDim2.new(0, 24, 0, 24),
+            Position = UDim2.new(0, 12, 0.5, -12),
+            ZIndex = 5,
+            Parent = tabButton
         })
         
-        local TabTitle = Utility:Create("TextLabel", {
-            Size = UDim2.new(1, -44, 1, 0),
-            Position = UDim2.new(0, 40, 0, 0),
+        local tabLabel = Utility:Create("TextLabel", {
+            Name = "Label",
             BackgroundTransparency = 1,
+            Font = Enum.Font.GothamSemibold,
             Text = Tab.Name,
-            TextColor3 = NeonPrime.Theme.SubText,
-            FontFace = NeonPrime.Theme.Font,
-            TextSize = 14,
+            TextColor3 = CurrentTheme.TextSecondary,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = TabButton
+            Position = UDim2.new(0, 45, 0, 0),
+            Size = UDim2.new(1, -50, 1, 0),
+            ZIndex = 5,
+            Parent = tabButton
         })
         
-        local TabContent = Utility:Create("ScrollingFrame", {
-            Size = UDim2.new(1, -24, 1, -24),
-            Position = UDim2.new(0, 12, 0, 12),
+        local tabIndicator = Utility:Create("Frame", {
+            Name = "Indicator",
+            BackgroundColor3 = CurrentTheme.Primary,
+            Size = UDim2.new(0, 3, 0, 0),
+            Position = UDim2.new(0, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            BorderSizePixel = 0,
+            ZIndex = 6,
+            Parent = tabButton
+        })
+        
+        Utility:AddCorner(tabIndicator, UDim.new(0, 2))
+        
+        --//======================================================
+        --// TAB CONTENT
+        --//======================================================
+        
+        local tabContent = Utility:Create("ScrollingFrame", {
+            Name = "TabContent",
             BackgroundTransparency = 1,
-            ScrollBarThickness = 2,
-            ScrollBarImageColor3 = NeonPrime.Theme.Primary,
-            ScrollingDirection = Enum.ScrollingDirection.Y,
+            Size = UDim2.new(1, 0, 1, 0),
+            ScrollBarThickness = 6,
+            ScrollBarImageColor3 = CurrentTheme.Primary,
+            BorderSizePixel = 0,
             Visible = false,
-            Parent = ContentContainer
+            ZIndex = 3,
+            Parent = contentContainer
         })
-        Utility:AddPadding(TabContent, 4)
         
-        local ContentLayout = Utility:Create("UIListLayout", {
-            SortOrder = Enum.SortOrder.LayoutOrder,
+        Utility:AddPadding(tabContent, {All = 15})
+        
+        local contentLayout = Utility:Create("UIListLayout", {
             Padding = UDim.new(0, 12),
-            Parent = TabContent
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = tabContent
         })
         
-        Utility:Connection(ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentLayout.AbsoluteContentSize.Y + 10)
+        contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 30)
         end)
         
-        function Tab:Activate()
-            for _, t in pairs(Window.Tabs) do
-                t.Deactivate()
+        --//======================================================
+        --// TAB SELECTION
+        --//======================================================
+        
+        local function selectTab()
+            for _, tab in pairs(Window.Tabs) do
+                tab.Button.BackgroundColor3 = CurrentTheme.BackgroundTertiary
+                tab.Label.TextColor3 = CurrentTheme.TextSecondary
+                tab.Icon.ImageColor3 = CurrentTheme.TextSecondary
+                Utility:Tween(tab.Indicator, {Size = UDim2.new(0, 3, 0, 0)}, 0.2)
+                tab.Content.Visible = false
             end
-            Window.ActiveTab = self
-            TabContent.Visible = true
             
-            Utility:Tween(TabButton, {BackgroundTransparency = 0}, 0.2)
-            Utility:Tween(TabIcon, {ImageColor3 = NeonPrime.Theme.Primary}, 0.2)
-            Utility:Tween(TabTitle, {TextColor3 = NeonPrime.Theme.Text}, 0.2)
+            tabButton.BackgroundColor3 = CurrentTheme.BackgroundSecondary
+            tabLabel.TextColor3 = CurrentTheme.Text
+            tabIcon.ImageColor3 = CurrentTheme.Primary
+            Utility:Tween(tabIndicator, {Size = UDim2.new(0, 3, 1, -10)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            tabContent.Visible = true
+            
+            Window.CurrentTab = Tab
         end
         
-        function Tab:Deactivate()
-            TabContent.Visible = false
-            Utility:Tween(TabButton, {BackgroundTransparency = 1}, 0.2)
-            Utility:Tween(TabIcon, {ImageColor3 = NeonPrime.Theme.SubText}, 0.2)
-            Utility:Tween(TabTitle, {TextColor3 = NeonPrime.Theme.SubText}, 0.2)
-        end
-        
-        Utility:Connection(TabButton.MouseButton1Click, function()
-            AnimationEngine:CreateRipple(TabButton, Mouse.X, Mouse.Y)
-            Tab:Activate()
+        tabButton.MouseButton1Click:Connect(function()
+            Utility:RippleEffect(tabButton, tabButton.AbsoluteSize.X / 2, tabButton.AbsoluteSize.Y / 2)
+            selectTab()
         end)
+        
+        Tab.Button = tabButton
+        Tab.Content = tabContent
+        Tab.Label = tabLabel
+        Tab.Icon = tabIcon
+        Tab.Indicator = tabIndicator
         
         table.insert(Window.Tabs, Tab)
-        if #Window.Tabs == 1 then Tab:Activate() end
         
-        --//=======================================================================================
+        if #Window.Tabs == 1 then
+            selectTab()
+        end
+        
+        --//======================================================
         --// SECTION SYSTEM
-        --//=======================================================================================
+        --//======================================================
         
-        function Tab:CreateSection(options)
+        function Tab:CreateSection(sectionName)
             local Section = {
-                Name = options.Name or "Section",
+                Name = sectionName or "Section",
                 Elements = {}
             }
             
-            local SectionFrame = Utility:Create("Frame", {
+            local sectionFrame = Utility:Create("Frame", {
+                Name = "Section",
+                BackgroundColor3 = CurrentTheme.BackgroundSecondary,
                 Size = UDim2.new(1, 0, 0, 0),
-                BackgroundColor3 = NeonPrime.Theme.Surface,
-                Parent = TabContent
-            })
-            Utility:AddCorner(SectionFrame)
-            Utility:AddStroke(SectionFrame, NeonPrime.Theme.StrokeDark, 1, 0)
-            
-            local SectionLayout = Utility:Create("UIListLayout", {
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 8),
-                Parent = SectionFrame
+                AutomaticSize = Enum.AutomaticSize.Y,
+                ZIndex = 4,
+                Parent = tabContent
             })
             
-            local SectionPadding = Utility:AddPadding(SectionFrame, 12)
+            Utility:AddCorner(sectionFrame, UDim.new(0, 10))
+            Utility:AddStroke(sectionFrame, CurrentTheme.Border, 1, 0.4)
             
-            local SectionTitle = Utility:Create("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 24),
+            local sectionHeader = Utility:Create("Frame", {
+                Name = "Header",
+                BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                Size = UDim2.new(1, 0, 0, 40),
+                ZIndex = 5,
+                Parent = sectionFrame
+            })
+            
+            Utility:AddCorner(sectionHeader, UDim.new(0, 10))
+            
+            local sectionTitle = Utility:Create("TextLabel", {
+                Name = "Title",
                 BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
                 Text = Section.Name,
-                TextColor3 = NeonPrime.Theme.Primary,
-                FontFace = NeonPrime.Theme.FontBold,
+                TextColor3 = CurrentTheme.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = SectionFrame
+                Position = UDim2.new(0, 15, 0, 0),
+                Size = UDim2.new(1, -30, 1, 0),
+                ZIndex = 6,
+                Parent = sectionHeader
             })
             
-            Utility:Create("Frame", {
-                Size = UDim2.new(1, 0, 0, 1),
-                BackgroundColor3 = NeonPrime.Theme.StrokeDark,
+            local sectionAccent = Utility:Create("Frame", {
+                Name = "Accent",
+                BackgroundColor3 = CurrentTheme.Primary,
+                Size = UDim2.new(1, 0, 0, 2),
+                Position = UDim2.new(0, 0, 1, -2),
                 BorderSizePixel = 0,
-                Parent = SectionFrame
+                ZIndex = 6,
+                Parent = sectionHeader
             })
             
-            Utility:Connection(SectionLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-                SectionFrame.Size = UDim2.new(1, 0, 0, SectionLayout.AbsoluteContentSize.Y + 24)
-            end)
+            Utility:AddGradient(sectionAccent, CurrentTheme.Primary, CurrentTheme.PrimaryLight, 90)
             
-            --//=======================================================================================
-            --// ELEMENTS ENGINE
-            --//=======================================================================================
+            local sectionContent = Utility:Create("Frame", {
+                Name = "Content",
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 0),
+                Position = UDim2.new(0, 0, 0, 40),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                ZIndex = 5,
+                Parent = sectionFrame
+            })
             
-            --// BUTTON
-            function Section:CreateButton(options)
-                local btn = {Name = options.Name or "Button", Callback = options.Callback or function() end}
+            Utility:AddPadding(sectionContent, {All = 12})
+            
+            local sectionLayout = Utility:Create("UIListLayout", {
+                Padding = UDim.new(0, 10),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = sectionContent
+            })
+            
+            Section.Frame = sectionFrame
+            Section.Content = sectionContent
+            
+            table.insert(Tab.Sections, Section)
+            
+            --//======================================================
+            --// BUTTON ELEMENT
+            --//======================================================
+            
+            function Section:Button(buttonConfig)
+                local callback = buttonConfig.Callback or function() end
+                local buttonText = buttonConfig.Text or "Button"
                 
-                local ButtonFrame = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ButtonHeight),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    Text = "",
+                local button = Utility:Create("TextButton", {
+                    Name = "Button",
+                    BackgroundColor3 = CurrentTheme.Primary,
+                    Size = UDim2.new(1, 0, 0, MOBILE_BUTTON_SIZE),
                     AutoButtonColor = false,
-                    Parent = SectionFrame,
-                    ClipsDescendants = true
-                })
-                Utility:AddCorner(ButtonFrame)
-                Utility:AddStroke(ButtonFrame, NeonPrime.Theme.StrokeLight)
-                AnimationEngine:HoverEffect(ButtonFrame, NeonPrime.Theme.SurfaceLight, NeonPrime.Theme.StrokeLight)
-                
-                Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, 0, 1, 0),
-                    BackgroundTransparency = 1,
-                    Text = btn.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = buttonText,
+                    TextColor3 = CurrentTheme.Text,
                     TextSize = 14,
-                    Parent = ButtonFrame
+                    ZIndex = 6,
+                    Parent = sectionContent
                 })
                 
-                Utility:Connection(ButtonFrame.MouseButton1Click, function()
-                    AnimationEngine:CreateRipple(ButtonFrame, Mouse.X, Mouse.Y)
-                    task.spawn(btn.Callback)
+                Utility:AddCorner(button, UDim.new(0, 8))
+                Utility:AddGradient(button, CurrentTheme.Primary, CurrentTheme.PrimaryDark, 135)
+                
+                button.MouseEnter:Connect(function()
+                    Utility:Tween(button, {BackgroundColor3 = CurrentTheme.PrimaryLight}, 0.2)
                 end)
-                return btn
+                
+                button.MouseLeave:Connect(function()
+                    Utility:Tween(button, {BackgroundColor3 = CurrentTheme.Primary}, 0.2)
+                end)
+                
+                button.MouseButton1Click:Connect(function()
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local buttonPos = button.AbsolutePosition
+                    Utility:RippleEffect(button, mousePos.X - buttonPos.X, mousePos.Y - buttonPos.Y)
+                    
+                    pcall(callback)
+                end)
+                
+                return button
             end
             
-            --// TOGGLE
-            function Section:CreateToggle(options)
-                local tgl = {
-                    Name = options.Name or "Toggle",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    State = options.Default or false,
-                    Callback = options.Callback or function() end
-                }
-                NeonPrime.Flags[tgl.Flag] = tgl.State
+            --//======================================================
+            --// TOGGLE ELEMENT
+            --//======================================================
+            
+            function Section:Toggle(toggleConfig)
+                local callback = toggleConfig.Callback or function() end
+                local toggleText = toggleConfig.Text or "Toggle"
+                local default = toggleConfig.Default or false
+                local flag = toggleConfig.Flag
                 
-                local ToggleFrame = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundColor3 = NeonPrime.Theme.Background,
-                    BackgroundTransparency = 1,
-                    Text = "",
-                    AutoButtonColor = false,
-                    Parent = SectionFrame
-                })
+                local toggleState = default
                 
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -60, 1, 0),
-                    BackgroundTransparency = 1,
-                    Text = tgl.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = ToggleFrame
-                })
-                
-                local SwitchBg = Utility:Create("Frame", {
-                    Size = UDim2.new(0, 44, 0, 24),
-                    Position = UDim2.new(1, -44, 0.5, -12),
-                    BackgroundColor3 = tgl.State and NeonPrime.Theme.Primary or NeonPrime.Theme.SurfaceLight,
-                    Parent = ToggleFrame
-                })
-                Utility:AddCorner(SwitchBg, 12)
-                local Stroke = Utility:AddStroke(SwitchBg, tgl.State and NeonPrime.Theme.Primary or NeonPrime.Theme.StrokeLight)
-                
-                local Indicator = Utility:Create("Frame", {
-                    Size = UDim2.new(0, 18, 0, 18),
-                    Position = UDim2.new(0, tgl.State and 22 or 3, 0.5, -9),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    Parent = SwitchBg
-                })
-                Utility:AddCorner(Indicator, 9)
-                Utility:CreateShadow(Indicator, 6, 0.2)
-                
-                function tgl:Set(state)
-                    tgl.State = state
-                    NeonPrime.Flags[tgl.Flag] = state
-                    Utility:Tween(SwitchBg, {BackgroundColor3 = state and NeonPrime.Theme.Primary or NeonPrime.Theme.SurfaceLight}, 0.2)
-                    Utility:Tween(Stroke, {Color = state and NeonPrime.Theme.Primary or NeonPrime.Theme.StrokeLight}, 0.2)
-                    Utility:Tween(Indicator, {Position = UDim2.new(0, state and 23 or 3, 0.5, -9)}, 0.3, Enum.EasingStyle.Back)
-                    task.spawn(tgl.Callback, state)
+                if flag then
+                    toggleState = ConfigSystem:GetFlag(flag, default)
                 end
                 
-                Utility:Connection(ToggleFrame.MouseButton1Click, function()
-                    tgl:Set(not tgl.State)
+                local toggleFrame = Utility:Create("Frame", {
+                    Name = "Toggle",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, MOBILE_TOGGLE_SIZE),
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(toggleFrame, UDim.new(0, 8))
+                Utility:AddStroke(toggleFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local toggleLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = toggleText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 0),
+                    Size = UDim2.new(1, -80, 1, 0),
+                    ZIndex = 7,
+                    Parent = toggleFrame
+                })
+                
+                local toggleButton = Utility:Create("TextButton", {
+                    Name = "Button",
+                    BackgroundColor3 = toggleState and CurrentTheme.Primary or CurrentTheme.Background,
+                    Size = UDim2.new(0, 50, 0, 28),
+                    Position = UDim2.new(1, -60, 0.5, -14),
+                    AutoButtonColor = false,
+                    Text = "",
+                    ZIndex = 7,
+                    Parent = toggleFrame
+                })
+                
+                Utility:AddCorner(toggleButton, UDim.new(1, 0))
+                Utility:AddStroke(toggleButton, CurrentTheme.Border, 1.5, 0.3)
+                
+                local toggleIndicator = Utility:Create("Frame", {
+                    Name = "Indicator",
+                    BackgroundColor3 = CurrentTheme.Text,
+                    Size = UDim2.new(0, 22, 0, 22),
+                    Position = toggleState and UDim2.new(1, -25, 0.5, -11) or UDim2.new(0, 3, 0.5, -11),
+                    ZIndex = 8,
+                    Parent = toggleButton
+                })
+                
+                Utility:AddCorner(toggleIndicator, UDim.new(1, 0))
+                
+                local function updateToggle(state, animated)
+                    toggleState = state
+                    
+                    if animated == nil then animated = true end
+                    
+                    local duration = animated and 0.25 or 0
+                    
+                    Utility:Tween(toggleButton, {
+                        BackgroundColor3 = state and CurrentTheme.Primary or CurrentTheme.Background
+                    }, duration)
+                    
+                    Utility:Tween(toggleIndicator, {
+                        Position = state and UDim2.new(1, -25, 0.5, -11) or UDim2.new(0, 3, 0.5, -11)
+                    }, duration, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, state)
+                    end
+                    
+                    pcall(callback, state)
+                end
+                
+                toggleButton.MouseButton1Click:Connect(function()
+                    Utility:RippleEffect(toggleButton, toggleButton.AbsoluteSize.X / 2, toggleButton.AbsoluteSize.Y / 2)
+                    updateToggle(not toggleState)
                 end)
                 
-                return tgl
+                updateToggle(toggleState, false)
+                
+                local Toggle = {}
+                function Toggle:Set(value)
+                    updateToggle(value, true)
+                end
+                
+                return Toggle
             end
             
-            --// SLIDER
-            function Section:CreateSlider(options)
-                local sld = {
-                    Name = options.Name or "Slider",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Min = options.Min or 0,
-                    Max = options.Max or 100,
-                    Default = options.Default or 50,
-                    Decimals = options.Decimals or 0,
-                    Value = 0,
-                    Callback = options.Callback or function() end
-                }
-                sld.Value = sld.Default
-                NeonPrime.Flags[sld.Flag] = sld.Value
+            --//======================================================
+            --// SLIDER ELEMENT
+            --//======================================================
+            
+            function Section:Slider(sliderConfig)
+                local callback = sliderConfig.Callback or function() end
+                local sliderText = sliderConfig.Text or "Slider"
+                local min = sliderConfig.Min or 0
+                local max = sliderConfig.Max or 100
+                local default = sliderConfig.Default or min
+                local increment = sliderConfig.Increment or 1
+                local flag = sliderConfig.Flag
                 
-                local SliderFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 60),
-                    BackgroundTransparency = 1,
-                    Parent = SectionFrame
+                local sliderValue = default
+                
+                if flag then
+                    sliderValue = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local sliderFrame = Utility:Create("Frame", {
+                    Name = "Slider",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 70),
+                    ZIndex = 6,
+                    Parent = sectionContent
                 })
                 
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -50, 0, 20),
-                    Position = UDim2.new(0, 0, 0, 5),
+                Utility:AddCorner(sliderFrame, UDim.new(0, 8))
+                Utility:AddStroke(sliderFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local sliderLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
                     BackgroundTransparency = 1,
-                    Text = sld.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = sliderText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = SliderFrame
+                    Position = UDim2.new(0, 15, 0, 10),
+                    Size = UDim2.new(1, -80, 0, 20),
+                    ZIndex = 7,
+                    Parent = sliderFrame
                 })
                 
-                local ValueLabel = Utility:Create("TextLabel", {
-                    Size = UDim2.new(0, 50, 0, 20),
-                    Position = UDim2.new(1, -50, 0, 5),
+                local sliderValueLabel = Utility:Create("TextLabel", {
+                    Name = "Value",
                     BackgroundTransparency = 1,
-                    Text = tostring(sld.Value),
-                    TextColor3 = NeonPrime.Theme.Primary,
-                    FontFace = NeonPrime.Theme.FontBold,
-                    TextSize = 14,
+                    Font = Enum.Font.GothamBold,
+                    Text = tostring(sliderValue),
+                    TextColor3 = CurrentTheme.Primary,
+                    TextSize = 13,
                     TextXAlignment = Enum.TextXAlignment.Right,
-                    Parent = SliderFrame
+                    Position = UDim2.new(1, -65, 0, 10),
+                    Size = UDim2.new(0, 50, 0, 20),
+                    ZIndex = 7,
+                    Parent = sliderFrame
                 })
                 
-                local TrackBg = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, 8),
-                    Position = UDim2.new(0, 0, 1, -15),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    Text = "",
-                    AutoButtonColor = false,
-                    Parent = SliderFrame
+                local sliderTrack = Utility:Create("Frame", {
+                    Name = "Track",
+                    BackgroundColor3 = CurrentTheme.Background,
+                    Size = UDim2.new(1, -30, 0, 8),
+                    Position = UDim2.new(0, 15, 1, -25),
+                    ZIndex = 7,
+                    Parent = sliderFrame
                 })
-                Utility:AddCorner(TrackBg, 4)
                 
-                local Fill = Utility:Create("Frame", {
-                    Size = UDim2.new((sld.Value - sld.Min) / (sld.Max - sld.Min), 0, 1, 0),
-                    BackgroundColor3 = NeonPrime.Theme.Primary,
-                    Parent = TrackBg
+                Utility:AddCorner(sliderTrack, UDim.new(1, 0))
+                
+                local sliderFill = Utility:Create("Frame", {
+                    Name = "Fill",
+                    BackgroundColor3 = CurrentTheme.Primary,
+                    Size = UDim2.new(0, 0, 1, 0),
+                    ZIndex = 8,
+                    Parent = sliderTrack
                 })
-                Utility:AddCorner(Fill, 4)
-                Utility:AddGradient(Fill, NeonPrime.Theme.Primary, NeonPrime.Theme.PrimaryDark, 0)
                 
-                local Knob = Utility:Create("Frame", {
-                    Size = UDim2.new(0, 16, 0, 16),
-                    Position = UDim2.new(1, -8, 0.5, -8),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    Parent = Fill
+                Utility:AddCorner(sliderFill, UDim.new(1, 0))
+                Utility:AddGradient(sliderFill, CurrentTheme.Primary, CurrentTheme.PrimaryLight, 90)
+                
+                local sliderKnob = Utility:Create("Frame", {
+                    Name = "Knob",
+                    BackgroundColor3 = CurrentTheme.Text,
+                    Size = UDim2.new(0, 18, 0, 18),
+                    Position = UDim2.new(0, 0, 0.5, -9),
+                    ZIndex = 9,
+                    Parent = sliderFill
                 })
-                Utility:AddCorner(Knob, 8)
-                Utility:CreateShadow(Knob, 8, 0.3)
                 
-                function sld:Set(val)
-                    val = math.clamp(val, sld.Min, sld.Max)
-                    local formatStr = "%." .. sld.Decimals .. "f"
-                    val = tonumber(string.format(formatStr, val))
-                    sld.Value = val
-                    NeonPrime.Flags[sld.Flag] = val
+                Utility:AddCorner(sliderKnob, UDim.new(1, 0))
+                Utility:AddStroke(sliderKnob, CurrentTheme.Primary, 2)
+                
+                local function updateSlider(value, skipCallback)
+                    value = math.clamp(value, min, max)
+                    value = math.floor(value / increment + 0.5) * increment
                     
-                    ValueLabel.Text = tostring(val)
-                    local percent = (val - sld.Min) / (sld.Max - sld.Min)
-                    Utility:Tween(Fill, {Size = UDim2.new(percent, 0, 1, 0)}, 0.1)
-                    task.spawn(sld.Callback, val)
+                    sliderValue = value
+                    sliderValueLabel.Text = tostring(value)
+                    
+                    local percent = (value - min) / (max - min)
+                    Utility:Tween(sliderFill, {Size = UDim2.new(percent, 0, 1, 0)}, 0.15)
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, value)
+                    end
+                    
+                    if not skipCallback then
+                        pcall(callback, value)
+                    end
                 end
                 
                 local dragging = false
-                Utility:Connection(TrackBg.InputBegan, function(input)
+                
+                sliderTrack.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         dragging = true
-                    end
-                end)
-                
-                Utility:Connection(UserInputService.InputEnded, function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        dragging = false
-                    end
-                end)
-                
-                Utility:Connection(UserInputService.InputChanged, function(input)
-                    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                        local inputPos = input.Position.X
-                        local trackPos = TrackBg.AbsolutePosition.X
-                        local trackSize = TrackBg.AbsoluteSize.X
-                        local percent = math.clamp((inputPos - trackPos) / trackSize, 0, 1)
-                        local val = sld.Min + (sld.Max - sld.Min) * percent
-                        sld:Set(val)
-                    end
-                end)
-                
-                return sld
-            end
-            
-            --// DROPDOWN
-            function Section:CreateDropdown(options)
-                local dd = {
-                    Name = options.Name or "Dropdown",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Options = options.Options or {},
-                    Default = options.Default,
-                    Value = options.Default,
-                    Callback = options.Callback or function() end,
-                    Expanded = false
-                }
-                NeonPrime.Flags[dd.Flag] = dd.Value
-                
-                local DropdownFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    ClipsDescendants = true,
-                    Parent = SectionFrame
-                })
-                Utility:AddCorner(DropdownFrame)
-                local DropStroke = Utility:AddStroke(DropdownFrame, NeonPrime.Theme.StrokeLight)
-                
-                local HeaderBtn = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundTransparency = 1,
-                    Text = "",
-                    Parent = DropdownFrame
-                })
-                
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -40, 1, 0),
-                    Position = UDim2.new(0, 12, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = dd.Name .. " : " .. tostring(dd.Value or "None"),
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = HeaderBtn
-                })
-                
-                local Arrow = Utility:Create("ImageLabel", {
-                    Size = UDim2.new(0, 20, 0, 20),
-                    Position = UDim2.new(1, -30, 0.5, -10),
-                    BackgroundTransparency = 1,
-                    Image = "rbxassetid://10747384394", -- Expand icon
-                    ImageColor3 = NeonPrime.Theme.SubText,
-                    Parent = HeaderBtn
-                })
-                
-                local OptionContainer = Utility:Create("ScrollingFrame", {
-                    Size = UDim2.new(1, -8, 1, -56),
-                    Position = UDim2.new(0, 4, 0, 52),
-                    BackgroundTransparency = 1,
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = NeonPrime.Theme.Primary,
-                    Parent = DropdownFrame
-                })
-                
-                local OptLayout = Utility:Create("UIListLayout", {
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 4),
-                    Parent = OptionContainer
-                })
-                
-                function dd:Refresh(newOptions)
-                    dd.Options = newOptions or dd.Options
-                    for _, child in pairs(OptionContainer:GetChildren()) do
-                        if child:IsA("TextButton") then child:Destroy() end
-                    end
-                    
-                    for i, opt in pairs(dd.Options) do
-                        local btn = Utility:Create("TextButton", {
-                            Size = UDim2.new(1, 0, 0, 36),
-                            BackgroundColor3 = NeonPrime.Theme.Surface,
-                            Text = "",
-                            AutoButtonColor = false,
-                            Parent = OptionContainer
-                        })
-                        Utility:AddCorner(btn, 6)
                         
-                        local lbl = Utility:Create("TextLabel", {
-                            Size = UDim2.new(1, -20, 1, 0),
-                            Position = UDim2.new(0, 10, 0, 0),
-                            BackgroundTransparency = 1,
-                            Text = tostring(opt),
-                            TextColor3 = (dd.Value == opt) and NeonPrime.Theme.Primary or NeonPrime.Theme.SubText,
-                            FontFace = NeonPrime.Theme.Font,
-                            TextSize = 13,
-                            TextXAlignment = Enum.TextXAlignment.Left,
-                            Parent = btn
-                        })
+                        local function update()
+                            local mousePos = UserInputService:GetMouseLocation().X
+                            local trackPos = sliderTrack.AbsolutePosition.X
+                            local trackSize = sliderTrack.AbsoluteSize.X
+                            
+                            local percent = math.clamp((mousePos - trackPos) / trackSize, 0, 1)
+                            local value = min + (max - min) * percent
+                            
+                            updateSlider(value)
+                        end
                         
-                        Utility:Connection(btn.MouseButton1Click, function()
-                            dd:Set(opt)
-                            dd:Toggle()
-                        end)
+                        update()
                         
-                        AnimationEngine:HoverEffect(btn, NeonPrime.Theme.Surface, NeonPrime.Theme.StrokeLight)
-                    end
-                    OptionContainer.CanvasSize = UDim2.new(0, 0, 0, OptLayout.AbsoluteContentSize.Y)
-                end
-                
-                function dd:Set(val)
-                    dd.Value = val
-                    NeonPrime.Flags[dd.Flag] = val
-                    Title.Text = dd.Name .. " : " .. tostring(val)
-                    dd:Refresh()
-                    task.spawn(dd.Callback, val)
-                end
-                
-                function dd:Toggle()
-                    dd.Expanded = not dd.Expanded
-                    local targetHeight = dd.Expanded and math.min(52 + (#dd.Options * 40), 200) or NeonPrime.Theme.Sizes.ElementHeight
-                    Utility:Tween(DropdownFrame, {Size = UDim2.new(1, 0, 0, targetHeight)}, 0.3, Enum.EasingStyle.Quint)
-                    Utility:Tween(Arrow, {Rotation = dd.Expanded and 180 or 0}, 0.3)
-                    Utility:Tween(DropStroke, {Color = dd.Expanded and NeonPrime.Theme.Primary or NeonPrime.Theme.StrokeLight}, 0.3)
-                end
-                
-                Utility:Connection(HeaderBtn.MouseButton1Click, function() dd:Toggle() end)
-                dd:Refresh()
-                
-                return dd
-            end
-            
-            --// MULTI DROPDOWN
-            function Section:CreateMultiDropdown(options)
-                local mdd = {
-                    Name = options.Name or "Multi Dropdown",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Options = options.Options or {},
-                    Default = options.Default or {},
-                    Value = {},
-                    Callback = options.Callback or function() end,
-                    Expanded = false
-                }
-                
-                for _, v in pairs(mdd.Default) do mdd.Value[v] = true end
-                NeonPrime.Flags[mdd.Flag] = mdd.Value
-                
-                local DropdownFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    ClipsDescendants = true,
-                    Parent = SectionFrame
-                })
-                Utility:AddCorner(DropdownFrame)
-                local DropStroke = Utility:AddStroke(DropdownFrame, NeonPrime.Theme.StrokeLight)
-                
-                local HeaderBtn = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundTransparency = 1,
-                    Text = "",
-                    Parent = DropdownFrame
-                })
-                
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -40, 1, 0),
-                    Position = UDim2.new(0, 12, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = mdd.Name .. " : ...",
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = HeaderBtn
-                })
-                
-                local Arrow = Utility:Create("ImageLabel", {
-                    Size = UDim2.new(0, 20, 0, 20),
-                    Position = UDim2.new(1, -30, 0.5, -10),
-                    BackgroundTransparency = 1,
-                    Image = "rbxassetid://10747384394",
-                    ImageColor3 = NeonPrime.Theme.SubText,
-                    Parent = HeaderBtn
-                })
-                
-                local OptionContainer = Utility:Create("ScrollingFrame", {
-                    Size = UDim2.new(1, -8, 1, -56),
-                    Position = UDim2.new(0, 4, 0, 52),
-                    BackgroundTransparency = 1,
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = NeonPrime.Theme.Primary,
-                    Parent = DropdownFrame
-                })
-                
-                local OptLayout = Utility:Create("UIListLayout", {
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 4),
-                    Parent = OptionContainer
-                })
-                
-                local function updateTitle()
-                    local selected = {}
-                    for k, v in pairs(mdd.Value) do
-                        if v then table.insert(selected, k) end
-                    end
-                    local str = table.concat(selected, ", ")
-                    if str == "" then str = "None" end
-                    if string.len(str) > 20 then str = string.sub(str, 1, 20) .. "..." end
-                    Title.Text = mdd.Name .. " : " .. str
-                end
-                
-                function mdd:Refresh(newOptions)
-                    mdd.Options = newOptions or mdd.Options
-                    for _, child in pairs(OptionContainer:GetChildren()) do
-                        if child:IsA("TextButton") then child:Destroy() end
-                    end
-                    
-                    for i, opt in pairs(mdd.Options) do
-                        local btn = Utility:Create("TextButton", {
-                            Size = UDim2.new(1, 0, 0, 36),
-                            BackgroundColor3 = NeonPrime.Theme.Surface,
-                            Text = "",
-                            AutoButtonColor = false,
-                            Parent = OptionContainer
-                        })
-                        Utility:AddCorner(btn, 6)
-                        
-                        local lbl = Utility:Create("TextLabel", {
-                            Size = UDim2.new(1, -40, 1, 0),
-                            Position = UDim2.new(0, 10, 0, 0),
-                            BackgroundTransparency = 1,
-                            Text = tostring(opt),
-                            TextColor3 = NeonPrime.Theme.Text,
-                            FontFace = NeonPrime.Theme.Font,
-                            TextSize = 13,
-                            TextXAlignment = Enum.TextXAlignment.Left,
-                            Parent = btn
-                        })
-                        
-                        local Checkbox = Utility:Create("Frame", {
-                            Size = UDim2.new(0, 20, 0, 20),
-                            Position = UDim2.new(1, -30, 0.5, -10),
-                            BackgroundColor3 = mdd.Value[opt] and NeonPrime.Theme.Primary or NeonPrime.Theme.Background,
-                            Parent = btn
-                        })
-                        Utility:AddCorner(Checkbox, 4)
-                        Utility:AddStroke(Checkbox, NeonPrime.Theme.StrokeLight)
-                        
-                        Utility:Connection(btn.MouseButton1Click, function()
-                            mdd.Value[opt] = not mdd.Value[opt]
-                            NeonPrime.Flags[mdd.Flag] = mdd.Value
-                            Utility:Tween(Checkbox, {BackgroundColor3 = mdd.Value[opt] and NeonPrime.Theme.Primary or NeonPrime.Theme.Background}, 0.2)
-                            updateTitle()
-                            task.spawn(mdd.Callback, mdd.Value)
-                        end)
-                    end
-                    OptionContainer.CanvasSize = UDim2.new(0, 0, 0, OptLayout.AbsoluteContentSize.Y)
-                end
-                
-                function mdd:Toggle()
-                    mdd.Expanded = not mdd.Expanded
-                    local targetHeight = mdd.Expanded and math.min(52 + (#mdd.Options * 40), 200) or NeonPrime.Theme.Sizes.ElementHeight
-                    Utility:Tween(DropdownFrame, {Size = UDim2.new(1, 0, 0, targetHeight)}, 0.3, Enum.EasingStyle.Quint)
-                    Utility:Tween(Arrow, {Rotation = mdd.Expanded and 180 or 0}, 0.3)
-                    Utility:Tween(DropStroke, {Color = mdd.Expanded and NeonPrime.Theme.Primary or NeonPrime.Theme.StrokeLight}, 0.3)
-                end
-                
-                Utility:Connection(HeaderBtn.MouseButton1Click, function() mdd:Toggle() end)
-                mdd:Refresh()
-                updateTitle()
-                
-                return mdd
-            end
-            
-            --// TEXTBOX
-            function Section:CreateTextbox(options)
-                local tb = {
-                    Name = options.Name or "Textbox",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Value = options.Default or "",
-                    Placeholder = options.Placeholder or "Enter text...",
-                    ClearOnFocus = options.ClearOnFocus or false,
-                    Callback = options.Callback or function() end
-                }
-                NeonPrime.Flags[tb.Flag] = tb.Value
-                
-                local TbFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 70),
-                    BackgroundTransparency = 1,
-                    Parent = SectionFrame
-                })
-                
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 20),
-                    Position = UDim2.new(0, 0, 0, 5),
-                    BackgroundTransparency = 1,
-                    Text = tb.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = TbFrame
-                })
-                
-                local InputBg = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 36),
-                    Position = UDim2.new(0, 0, 1, -40),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    Parent = TbFrame
-                })
-                Utility:AddCorner(InputBg)
-                local Stroke = Utility:AddStroke(InputBg, NeonPrime.Theme.StrokeLight)
-                
-                local InputField = Utility:Create("TextBox", {
-                    Size = UDim2.new(1, -20, 1, 0),
-                    Position = UDim2.new(0, 10, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = tb.Value,
-                    PlaceholderText = tb.Placeholder,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    PlaceholderColor3 = NeonPrime.Theme.SubText,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ClearTextOnFocus = tb.ClearOnFocus,
-                    Parent = InputBg
-                })
-                
-                function tb:Set(val)
-                    tb.Value = val
-                    InputField.Text = val
-                    NeonPrime.Flags[tb.Flag] = val
-                    task.spawn(tb.Callback, val)
-                end
-                
-                Utility:Connection(InputField.Focused, function()
-                    Utility:Tween(Stroke, {Color = NeonPrime.Theme.Primary}, 0.3)
-                end)
-                
-                Utility:Connection(InputField.FocusLost, function()
-                    Utility:Tween(Stroke, {Color = NeonPrime.Theme.StrokeLight}, 0.3)
-                    tb:Set(InputField.Text)
-                end)
-                
-                return tb
-            end
-
-            --// KEYBIND
-            function Section:CreateKeybind(options)
-                local kb = {
-                    Name = options.Name or "Keybind",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Key = options.Default or Enum.KeyCode.E,
-                    Callback = options.Callback or function() end,
-                    Binding = false
-                }
-                NeonPrime.Flags[kb.Flag] = kb.Key.Name
-                
-                local KbFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundTransparency = 1,
-                    Parent = SectionFrame
-                })
-                
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -100, 1, 0),
-                    BackgroundTransparency = 1,
-                    Text = kb.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = KbFrame
-                })
-                
-                local BindBtn = Utility:Create("TextButton", {
-                    Size = UDim2.new(0, 80, 0, 32),
-                    Position = UDim2.new(1, -80, 0.5, -16),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    Text = kb.Key.Name,
-                    TextColor3 = NeonPrime.Theme.Primary,
-                    FontFace = NeonPrime.Theme.FontBold,
-                    TextSize = 14,
-                    AutoButtonColor = false,
-                    Parent = KbFrame
-                })
-                Utility:AddCorner(BindBtn)
-                local Stroke = Utility:AddStroke(BindBtn, NeonPrime.Theme.StrokeLight)
-                
-                function kb:Set(key)
-                    kb.Key = key
-                    BindBtn.Text = key.Name
-                    NeonPrime.Flags[kb.Flag] = key.Name
-                end
-                
-                Utility:Connection(BindBtn.MouseButton1Click, function()
-                    kb.Binding = true
-                    BindBtn.Text = "..."
-                    Utility:Tween(Stroke, {Color = NeonPrime.Theme.Primary}, 0.2)
-                end)
-                
-                Utility:Connection(UserInputService.InputBegan, function(input, gpe)
-                    if kb.Binding then
-                        if input.UserInputType == Enum.UserInputType.Keyboard then
-                            local key = input.KeyCode
-                            if key == Enum.KeyCode.Escape then
-                                kb:Set(kb.Key) -- Cancel
-                            else
-                                kb:Set(key)
+                        local connection
+                        connection = UserInputService.InputChanged:Connect(function(input2)
+                            if dragging and (input2.UserInputType == Enum.UserInputType.MouseMovement or input2.UserInputType == Enum.UserInputType.Touch) then
+                                update()
                             end
-                            kb.Binding = false
-                            Utility:Tween(Stroke, {Color = NeonPrime.Theme.StrokeLight}, 0.2)
-                        end
-                    elseif not gpe and input.KeyCode == kb.Key then
-                        task.spawn(kb.Callback)
+                        end)
+                        
+                        local endConnection
+                        endConnection = UserInputService.InputEnded:Connect(function(input2)
+                            if input2.UserInputType == Enum.UserInputType.MouseButton1 or input2.UserInputType == Enum.UserInputType.Touch then
+                                dragging = false
+                                connection:Disconnect()
+                                endConnection:Disconnect()
+                            end
+                        end)
                     end
                 end)
                 
-                return kb
-            end
-            
-            --// COLOR PICKER (Advanced)
-            function Section:CreateColorPicker(options)
-                local cp = {
-                    Name = options.Name or "Color Picker",
-                    Flag = options.Flag or tostring(math.random(1000,9999)),
-                    Color = options.Default or Color3.new(1,0,0),
-                    Callback = options.Callback or function() end,
-                    Expanded = false
-                }
-                NeonPrime.Flags[cp.Flag] = cp.Color
+                updateSlider(sliderValue, true)
                 
-                local H, S, V = cp.Color:ToHSV()
-                
-                local CpFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundColor3 = NeonPrime.Theme.SurfaceLight,
-                    ClipsDescendants = true,
-                    Parent = SectionFrame
-                })
-                Utility:AddCorner(CpFrame)
-                local Stroke = Utility:AddStroke(CpFrame, NeonPrime.Theme.StrokeLight)
-                
-                local HeaderBtn = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, NeonPrime.Theme.Sizes.ElementHeight),
-                    BackgroundTransparency = 1,
-                    Text = "",
-                    Parent = CpFrame
-                })
-                
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, -60, 1, 0),
-                    Position = UDim2.new(0, 12, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = cp.Name,
-                    TextColor3 = NeonPrime.Theme.Text,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = HeaderBtn
-                })
-                
-                local ColorDisplay = Utility:Create("Frame", {
-                    Size = UDim2.new(0, 36, 0, 24),
-                    Position = UDim2.new(1, -48, 0.5, -12),
-                    BackgroundColor3 = cp.Color,
-                    Parent = HeaderBtn
-                })
-                Utility:AddCorner(ColorDisplay, 6)
-                Utility:AddStroke(ColorDisplay, NeonPrime.Theme.StrokeDark)
-                
-                -- Expanded Content
-                local PickerArea = Utility:Create("Frame", {
-                    Size = UDim2.new(1, -24, 0, 150),
-                    Position = UDim2.new(0, 12, 0, 50),
-                    BackgroundTransparency = 1,
-                    Parent = CpFrame
-                })
-                
-                local SatValMap = Utility:Create("TextButton", {
-                    Size = UDim2.new(1, -40, 1, -10),
-                    BackgroundColor3 = Color3.fromHSV(H, 1, 1),
-                    Text = "",
-                    AutoButtonColor = false,
-                    Parent = PickerArea
-                })
-                Utility:AddCorner(SatValMap, 6)
-                
-                local ValGradient = Utility:Create("UIGradient", {
-                    Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
-                        ColorSequenceKeypoint.new(1, Color3.new(0,0,0))
-                    },
-                    Rotation = 90,
-                    Parent = SatValMap
-                })
-                
-                local SatGradient = Utility:Create("ImageLabel", {
-                    Size = UDim2.new(1, 0, 1, 0),
-                    BackgroundTransparency = 1,
-                    Image = "rbxassetid://3887014957", -- White to trans map
-                    Parent = SatValMap
-                })
-                Utility:AddCorner(SatGradient, 6)
-                
-                local MapCursor = Utility:Create("Frame", {
-                    Size = UDim2.new(0, 10, 0, 10),
-                    Position = UDim2.new(S, -5, 1 - V, -5),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    Parent = SatValMap
-                })
-                Utility:AddCorner(MapCursor, 5)
-                Utility:AddStroke(MapCursor, Color3.new(0,0,0))
-                
-                local HueSlider = Utility:Create("TextButton", {
-                    Size = UDim2.new(0, 24, 1, -10),
-                    Position = UDim2.new(1, -24, 0, 0),
-                    Text = "",
-                    AutoButtonColor = false,
-                    Parent = PickerArea
-                })
-                Utility:AddCorner(HueSlider, 6)
-                Utility:Create("UIGradient", {
-                    Color = ColorSequence.new{
-                        ColorSequenceKeypoint.new(0, Color3.new(1,0,0)),
-                        ColorSequenceKeypoint.new(0.167, Color3.new(1,1,0)),
-                        ColorSequenceKeypoint.new(0.333, Color3.new(0,1,0)),
-                        ColorSequenceKeypoint.new(0.5, Color3.new(0,1,1)),
-                        ColorSequenceKeypoint.new(0.667, Color3.new(0,0,1)),
-                        ColorSequenceKeypoint.new(0.833, Color3.new(1,0,1)),
-                        ColorSequenceKeypoint.new(1, Color3.new(1,0,0))
-                    },
-                    Rotation = 90,
-                    Parent = HueSlider
-                })
-                
-                local HueCursor = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 4, 0, 6),
-                    Position = UDim2.new(0, -2, H, -3),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    Parent = HueSlider
-                })
-                Utility:AddCorner(HueCursor, 3)
-                Utility:AddStroke(HueCursor, Color3.new(0,0,0))
-                
-                local function UpdateColor()
-                    local col = Color3.fromHSV(H, S, V)
-                    cp.Color = col
-                    NeonPrime.Flags[cp.Flag] = col
-                    SatValMap.BackgroundColor3 = Color3.fromHSV(H, 1, 1)
-                    ColorDisplay.BackgroundColor3 = col
-                    task.spawn(cp.Callback, col)
+                local Slider = {}
+                function Slider:Set(value)
+                    updateSlider(value, false)
                 end
                 
-                function cp:Set(color)
-                    H, S, V = color:ToHSV()
-                    MapCursor.Position = UDim2.new(S, -5, 1 - V, -5)
-                    HueCursor.Position = UDim2.new(0, -2, H, -3)
-                    UpdateColor()
-                end
-                
-                local draggingMap, draggingHue = false, false
-                
-                Utility:Connection(SatValMap.InputBegan, function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        draggingMap = true
-                    end
-                end)
-                Utility:Connection(HueSlider.InputBegan, function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        draggingHue = true
-                    end
-                end)
-                Utility:Connection(UserInputService.InputEnded, function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        draggingMap = false
-                        draggingHue = false
-                    end
-                end)
-                
-                Utility:Connection(UserInputService.InputChanged, function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                        if draggingMap then
-                            local x = math.clamp((inp.Position.X - SatValMap.AbsolutePosition.X) / SatValMap.AbsoluteSize.X, 0, 1)
-                            local y = math.clamp((inp.Position.Y - SatValMap.AbsolutePosition.Y) / SatValMap.AbsoluteSize.Y, 0, 1)
-                            S, V = x, 1 - y
-                            MapCursor.Position = UDim2.new(S, -5, 1 - V, -5)
-                            UpdateColor()
-                        elseif draggingHue then
-                            local y = math.clamp((inp.Position.Y - HueSlider.AbsolutePosition.Y) / HueSlider.AbsoluteSize.Y, 0, 1)
-                            H = y
-                            HueCursor.Position = UDim2.new(0, -2, H, -3)
-                            UpdateColor()
-                        end
-                    end
-                end)
-                
-                Utility:Connection(HeaderBtn.MouseButton1Click, function()
-                    cp.Expanded = not cp.Expanded
-                    Utility:Tween(CpFrame, {Size = UDim2.new(1, 0, 0, cp.Expanded and 210 or NeonPrime.Theme.Sizes.ElementHeight)}, 0.3, Enum.EasingStyle.Quint)
-                    Utility:Tween(Stroke, {Color = cp.Expanded and NeonPrime.Theme.Primary or NeonPrime.Theme.StrokeLight}, 0.3)
-                end)
-                
-                return cp
+                return Slider
             end
             
-            --// LABEL
-            function Section:CreateLabel(text)
-                local lbl = {}
-                local LabelText = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 24),
-                    BackgroundTransparency = 1,
-                    Text = text,
-                    TextColor3 = NeonPrime.Theme.SubText,
-                    FontFace = NeonPrime.Theme.Font,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = SectionFrame
-                })
-                function lbl:Set(newText) LabelText.Text = newText end
-                return lbl
-            end
-
-            --// PARAGRAPH
-            function Section:CreateParagraph(options)
-                local para = {}
-                local PFrame = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 0), -- Auto size
-                    BackgroundColor3 = NeonPrime.Theme.Background,
-                    Parent = SectionFrame
-                })
-                Utility:AddCorner(PFrame)
-                Utility:AddPadding(PFrame, 10)
-                Utility:AddStroke(PFrame, NeonPrime.Theme.StrokeDark)
+            --//======================================================
+            --// TEXTBOX ELEMENT
+            --//======================================================
+            
+            function Section:Textbox(textboxConfig)
+                local callback = textboxConfig.Callback or function() end
+                local textboxText = textboxConfig.Text or "Textbox"
+                local placeholder = textboxConfig.Placeholder or "Enter text..."
+                local default = textboxConfig.Default or ""
+                local flag = textboxConfig.Flag
                 
-                local Title = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 20),
-                    BackgroundTransparency = 1,
-                    Text = options.Title or "Paragraph",
-                    TextColor3 = NeonPrime.Theme.Primary,
-                    FontFace = NeonPrime.Theme.FontBold,
-                    TextSize = 14,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = PFrame
+                local textboxValue = default
+                
+                if flag then
+                    textboxValue = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local textboxFrame = Utility:Create("Frame", {
+                    Name = "Textbox",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 75),
+                    ZIndex = 6,
+                    Parent = sectionContent
                 })
                 
-                local Content = Utility:Create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 0, 24),
+                Utility:AddCorner(textboxFrame, UDim.new(0, 8))
+                Utility:AddStroke(textboxFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local textboxLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
                     BackgroundTransparency = 1,
-                    Text = options.Content or "",
-                    TextColor3 = NeonPrime.Theme.SubText,
-                    FontFace = NeonPrime.Theme.FontRegular,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = textboxText,
+                    TextColor3 = CurrentTheme.Text,
                     TextSize = 13,
-                    TextWrapped = true,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    TextYAlignment = Enum.TextYAlignment.Top,
-                    Parent = PFrame
+                    Position = UDim2.new(0, 15, 0, 10),
+                    Size = UDim2.new(1, -30, 0, 20),
+                    ZIndex = 7,
+                    Parent = textboxFrame
                 })
                 
-                local function UpdateSize()
-                    local bounds = Utility:GetTextBounds(Content.Text, NeonPrime.Theme.FontRegular, 13, PFrame.AbsoluteSize.X - 20)
-                    Content.Size = UDim2.new(1, 0, 0, bounds.Y)
-                    PFrame.Size = UDim2.new(1, 0, 0, 24 + bounds.Y + 20)
+                local textboxInput = Utility:Create("TextBox", {
+                    Name = "Input",
+                    BackgroundColor3 = CurrentTheme.Background,
+                    Font = Enum.Font.Gotham,
+                    PlaceholderText = placeholder,
+                    PlaceholderColor3 = CurrentTheme.TextDisabled,
+                    Text = textboxValue,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 35),
+                    Size = UDim2.new(1, -30, 0, 32),
+                    ClearTextOnFocus = false,
+                    ZIndex = 7,
+                    Parent = textboxFrame
+                })
+                
+                Utility:AddCorner(textboxInput, UDim.new(0, 6))
+                Utility:AddStroke(textboxInput, CurrentTheme.Border, 1, 0.5)
+                Utility:AddPadding(textboxInput, {Left = 10, Right = 10})
+                
+                textboxInput.Focused:Connect(function()
+                    Utility:Tween(textboxInput, {BackgroundColor3 = CurrentTheme.BackgroundSecondary}, 0.2)
+                    Utility:Tween(textboxInput.UIStroke, {Transparency = 0, Color = CurrentTheme.Primary}, 0.2)
+                end)
+                
+                textboxInput.FocusLost:Connect(function()
+                    Utility:Tween(textboxInput, {BackgroundColor3 = CurrentTheme.Background}, 0.2)
+                    Utility:Tween(textboxInput.UIStroke, {Transparency = 0.5, Color = CurrentTheme.Border}, 0.2)
+                    
+                    textboxValue = textboxInput.Text
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, textboxValue)
+                    end
+                    
+                    pcall(callback, textboxValue)
+                end)
+                
+                local Textbox = {}
+                function Textbox:Set(value)
+                    textboxInput.Text = value
+                    textboxValue = value
+                    if flag then
+                        ConfigSystem:SetFlag(flag, value)
+                    end
                 end
                 
-                function para:Set(newContent)
-                    Content.Text = newContent
-                    UpdateSize()
-                end
-                
-                UpdateSize()
-                Utility:Connection(PFrame:GetPropertyChangedSignal("AbsoluteSize"), UpdateSize)
-                
-                return para
+                return Textbox
             end
             
-            --// SEPARATOR
-            function Section:CreateSeparator()
-                local Sep = Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 20),
+            --//======================================================
+            --// DROPDOWN ELEMENT
+            --//======================================================
+            
+            function Section:Dropdown(dropdownConfig)
+                local callback = dropdownConfig.Callback or function() end
+                local dropdownText = dropdownConfig.Text or "Dropdown"
+                local options = dropdownConfig.Options or {"Option 1", "Option 2"}
+                local default = dropdownConfig.Default or options[1]
+                local flag = dropdownConfig.Flag
+                
+                local selectedValue = default
+                local dropdownOpen = false
+                
+                if flag then
+                    selectedValue = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local dropdownFrame = Utility:Create("Frame", {
+                    Name = "Dropdown",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 75),
+                    ClipsDescendants = false,
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(dropdownFrame, UDim.new(0, 8))
+                Utility:AddStroke(dropdownFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local dropdownLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
                     BackgroundTransparency = 1,
-                    Parent = SectionFrame
+                    Font = Enum.Font.GothamSemibold,
+                    Text = dropdownText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 10),
+                    Size = UDim2.new(1, -30, 0, 20),
+                    ZIndex = 7,
+                    Parent = dropdownFrame
                 })
-                Utility:Create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 1),
-                    Position = UDim2.new(0, 0, 0.5, 0),
-                    BackgroundColor3 = NeonPrime.Theme.StrokeDark,
-                    BorderSizePixel = 0,
-                    Parent = Sep
+                
+                local dropdownButton = Utility:Create("TextButton", {
+                    Name = "Button",
+                    BackgroundColor3 = CurrentTheme.Background,
+                    Font = Enum.Font.Gotham,
+                    Text = selectedValue,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 35),
+                    Size = UDim2.new(1, -30, 0, 32),
+                    AutoButtonColor = false,
+                    ZIndex = 7,
+                    Parent = dropdownFrame
                 })
+                
+                Utility:AddCorner(dropdownButton, UDim.new(0, 6))
+                Utility:AddStroke(dropdownButton, CurrentTheme.Border, 1, 0.5)
+                Utility:AddPadding(dropdownButton, {Left = 10, Right = 35})
+                
+                local dropdownArrow = Utility:Create("TextLabel", {
+                    Name = "Arrow",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = "▼",
+                    TextColor3 = CurrentTheme.TextSecondary,
+                    TextSize = 10,
+                    Position = UDim2.new(1, -25, 0, 0),
+                    Size = UDim2.new(0, 20, 1, 0),
+                    ZIndex = 8,
+                    Parent = dropdownButton
+                })
+                
+                local dropdownList = Utility:Create("ScrollingFrame", {
+                    Name = "List",
+                    BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Position = UDim2.new(0, 0, 1, 5),
+                    ScrollBarThickness = 4,
+                    ScrollBarImageColor3 = CurrentTheme.Primary,
+                    Visible = false,
+                    ZIndex = 100,
+                    Parent = dropdownButton
+                })
+                
+                Utility:AddCorner(dropdownList, UDim.new(0, 6))
+                Utility:AddStroke(dropdownList, CurrentTheme.Border, 1, 0.3)
+                Utility:AddPadding(dropdownList, {All = 5})
+                
+                local listLayout = Utility:Create("UIListLayout", {
+                    Padding = UDim.new(0, 3),
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Parent = dropdownList
+                })
+                
+                local function updateDropdown(value, skipCallback)
+                    selectedValue = value
+                    dropdownButton.Text = value
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, value)
+                    end
+                    
+                    if not skipCallback then
+                        pcall(callback, value)
+                    end
+                end
+                
+                local function toggleDropdown()
+                    dropdownOpen = not dropdownOpen
+                    dropdownList.Visible = dropdownOpen
+                    
+                    if dropdownOpen then
+                        local maxHeight = math.min(#options * 35, 150)
+                        Utility:Tween(dropdownList, {Size = UDim2.new(1, 0, 0, maxHeight)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                        Utility:Tween(dropdownArrow, {Rotation = 180}, 0.2)
+                        Utility:Tween(dropdownFrame, {Size = UDim2.new(1, 0, 0, 75 + maxHeight + 5)}, 0.2)
+                    else
+                        Utility:Tween(dropdownList, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                        Utility:Tween(dropdownArrow, {Rotation = 0}, 0.2)
+                        Utility:Tween(dropdownFrame, {Size = UDim2.new(1, 0, 0, 75)}, 0.2)
+                    end
+                end
+                
+                dropdownButton.MouseButton1Click:Connect(function()
+                    toggleDropdown()
+                end)
+                
+                for _, option in ipairs(options) do
+                    local optionButton = Utility:Create("TextButton", {
+                        Name = "Option",
+                        BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                        Font = Enum.Font.Gotham,
+                        Text = option,
+                        TextColor3 = CurrentTheme.Text,
+                        TextSize = 12,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        Size = UDim2.new(1, 0, 0, 30),
+                        AutoButtonColor = false,
+                        ZIndex = 101,
+                        Parent = dropdownList
+                    })
+                    
+                    Utility:AddCorner(optionButton, UDim.new(0, 5))
+                    Utility:AddPadding(optionButton, {Left = 10, Right = 10})
+                    
+                    optionButton.MouseEnter:Connect(function()
+                        Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.Primary}, 0.15)
+                    end)
+                    
+                    optionButton.MouseLeave:Connect(function()
+                        Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.BackgroundTertiary}, 0.15)
+                    end)
+                    
+                    optionButton.MouseButton1Click:Connect(function()
+                        updateDropdown(option)
+                        toggleDropdown()
+                    end)
+                end
+                
+                listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    dropdownList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+                end)
+                
+                updateDropdown(selectedValue, true)
+                
+                local Dropdown = {}
+                function Dropdown:Set(value)
+                    updateDropdown(value, false)
+                end
+                
+                function Dropdown:Refresh(newOptions, newDefault)
+                    for _, child in ipairs(dropdownList:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            child:Destroy()
+                        end
+                    end
+                    
+                    options = newOptions
+                    
+                    for _, option in ipairs(options) do
+                        local optionButton = Utility:Create("TextButton", {
+                            Name = "Option",
+                            BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                            Font = Enum.Font.Gotham,
+                            Text = option,
+                            TextColor3 = CurrentTheme.Text,
+                            TextSize = 12,
+                            TextXAlignment = Enum.TextXAlignment.Left,
+                            Size = UDim2.new(1, 0, 0, 30),
+                            AutoButtonColor = false,
+                            ZIndex = 101,
+                            Parent = dropdownList
+                        })
+                        
+                        Utility:AddCorner(optionButton, UDim.new(0, 5))
+                        Utility:AddPadding(optionButton, {Left = 10, Right = 10})
+                        
+                        optionButton.MouseEnter:Connect(function()
+                            Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.Primary}, 0.15)
+                        end)
+                        
+                        optionButton.MouseLeave:Connect(function()
+                            Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.BackgroundTertiary}, 0.15)
+                        end)
+                        
+                        optionButton.MouseButton1Click:Connect(function()
+                            updateDropdown(option)
+                            toggleDropdown()
+                        end)
+                    end
+                    
+                    if newDefault then
+                        updateDropdown(newDefault, false)
+                    end
+                end
+                
+                return Dropdown
             end
-
+            
+            --//======================================================
+            --// LABEL ELEMENT
+            --//======================================================
+            
+            function Section:Label(labelConfig)
+                local labelText = labelConfig.Text or "Label"
+                
+                local label = Utility:Create("TextLabel", {
+                    Name = "Label",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.Gotham,
+                    Text = labelText,
+                    TextColor3 = CurrentTheme.TextSecondary,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextWrapped = true,
+                    Size = UDim2.new(1, 0, 0, 25),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddPadding(label, {Left = 5, Right = 5})
+                
+                local Label = {}
+                function Label:Set(text)
+                    label.Text = text
+                end
+                
+                return Label
+            end
+            
+            --//======================================================
+            --// PARAGRAPH ELEMENT
+            --//======================================================
+            
+            function Section:Paragraph(paragraphConfig)
+                local title = paragraphConfig.Title or "Paragraph"
+                local content = paragraphConfig.Content or "Content"
+                
+                local paragraphFrame = Utility:Create("Frame", {
+                    Name = "Paragraph",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(paragraphFrame, UDim.new(0, 8))
+                Utility:AddStroke(paragraphFrame, CurrentTheme.Border, 1, 0.4)
+                Utility:AddPadding(paragraphFrame, {All = 12})
+                
+                local paragraphTitle = Utility:Create("TextLabel", {
+                    Name = "Title",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = title,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 14,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Size = UDim2.new(1, 0, 0, 20),
+                    ZIndex = 7,
+                    Parent = paragraphFrame
+                })
+                
+                local paragraphContent = Utility:Create("TextLabel", {
+                    Name = "Content",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.Gotham,
+                    Text = content,
+                    TextColor3 = CurrentTheme.TextSecondary,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextWrapped = true,
+                    Position = UDim2.new(0, 0, 0, 25),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    ZIndex = 7,
+                    Parent = paragraphFrame
+                })
+                
+                local Paragraph = {}
+                function Paragraph:Set(newTitle, newContent)
+                    paragraphTitle.Text = newTitle
+                    paragraphContent.Text = newContent
+                end
+                
+                return Paragraph
+            end
+            
+            --//======================================================
+            --// SEPARATOR ELEMENT
+            --//======================================================
+            
+            function Section:Separator()
+                local separator = Utility:Create("Frame", {
+                    Name = "Separator",
+                    BackgroundColor3 = CurrentTheme.Border,
+                    Size = UDim2.new(1, 0, 0, 1),
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                return separator
+            end
+            
+            --//======================================================
+            --// KEYBIND ELEMENT
+            --//======================================================
+            
+            function Section:Keybind(keybindConfig)
+                local callback = keybindConfig.Callback or function() end
+                local keybindText = keybindConfig.Text or "Keybind"
+                local default = keybindConfig.Default or Enum.KeyCode.E
+                local flag = keybindConfig.Flag
+                
+                local currentKey = default
+                local listening = false
+                
+                if flag then
+                    currentKey = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local keybindFrame = Utility:Create("Frame", {
+                    Name = "Keybind",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 52),
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(keybindFrame, UDim.new(0, 8))
+                Utility:AddStroke(keybindFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local keybindLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = keybindText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 0),
+                    Size = UDim2.new(1, -100, 1, 0),
+                    ZIndex = 7,
+                    Parent = keybindFrame
+                })
+                
+                local keybindButton = Utility:Create("TextButton", {
+                    Name = "Button",
+                    BackgroundColor3 = CurrentTheme.Background,
+                    Font = Enum.Font.GothamBold,
+                    Text = currentKey.Name,
+                    TextColor3 = CurrentTheme.Primary,
+                    TextSize = 12,
+                    Size = UDim2.new(0, 70, 0, 32),
+                    Position = UDim2.new(1, -80, 0.5, -16),
+                    AutoButtonColor = false,
+                    ZIndex = 7,
+                    Parent = keybindFrame
+                })
+                
+                Utility:AddCorner(keybindButton, UDim.new(0, 6))
+                Utility:AddStroke(keybindButton, CurrentTheme.Border, 1, 0.5)
+                
+                local function updateKeybind(key)
+                    currentKey = key
+                    keybindButton.Text = key.Name
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, key)
+                    end
+                end
+                
+                keybindButton.MouseButton1Click:Connect(function()
+                    if listening then return end
+                    
+                    listening = true
+                    keybindButton.Text = "..."
+                    Utility:Tween(keybindButton, {BackgroundColor3 = CurrentTheme.Primary}, 0.2)
+                    
+                    local connection
+                    connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                        if input.UserInputType == Enum.UserInputType.Keyboard then
+                            updateKeybind(input.KeyCode)
+                            listening = false
+                            Utility:Tween(keybindButton, {BackgroundColor3 = CurrentTheme.Background}, 0.2)
+                            connection:Disconnect()
+                        end
+                    end)
+                end)
+                
+                UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                    if not gameProcessed and input.KeyCode == currentKey then
+                        pcall(callback)
+                    end
+                end)
+                
+                local Keybind = {}
+                function Keybind:Set(key)
+                    updateKeybind(key)
+                end
+                
+                return Keybind
+            end
+            
+            --//======================================================
+            --// COLOR PICKER ELEMENT
+            --//======================================================
+            
+            function Section:ColorPicker(colorConfig)
+                local callback = colorConfig.Callback or function() end
+                local colorText = colorConfig.Text or "Color Picker"
+                local default = colorConfig.Default or Color3.fromRGB(138, 43, 226)
+                local flag = colorConfig.Flag
+                
+                local currentColor = default
+                
+                if flag then
+                    currentColor = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local colorFrame = Utility:Create("Frame", {
+                    Name = "ColorPicker",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 52),
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(colorFrame, UDim.new(0, 8))
+                Utility:AddStroke(colorFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local colorLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = colorText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 0),
+                    Size = UDim2.new(1, -70, 1, 0),
+                    ZIndex = 7,
+                    Parent = colorFrame
+                })
+                
+                local colorDisplay = Utility:Create("TextButton", {
+                    Name = "Display",
+                    BackgroundColor3 = currentColor,
+                    Size = UDim2.new(0, 45, 0, 32),
+                    Position = UDim2.new(1, -55, 0.5, -16),
+                    AutoButtonColor = false,
+                    Text = "",
+                    ZIndex = 7,
+                    Parent = colorFrame
+                })
+                
+                Utility:AddCorner(colorDisplay, UDim.new(0, 6))
+                Utility:AddStroke(colorDisplay, CurrentTheme.Border, 2, 0.3)
+                
+                local colorPickerOpen = false
+                
+                local colorPickerFrame = Utility:Create("Frame", {
+                    Name = "ColorPickerFrame",
+                    BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+                    Size = UDim2.new(0, 0, 0, 0),
+                    Position = UDim2.new(1, 5, 0, 0),
+                    ClipsDescendants = true,
+                    Visible = false,
+                    ZIndex = 200,
+                    Parent = colorFrame
+                })
+                
+                Utility:AddCorner(colorPickerFrame, UDim.new(0, 8))
+                Utility:AddStroke(colorPickerFrame, CurrentTheme.Border, 1, 0.3)
+                
+                local hue, sat, val = currentColor:ToHSV()
+                
+                local satValSelector = Utility:Create("ImageLabel", {
+                    Name = "SatVal",
+                    BackgroundColor3 = Color3.fromHSV(hue, 1, 1),
+                    Image = "rbxassetid://4155801252",
+                    Size = UDim2.new(1, -20, 0, 150),
+                    Position = UDim2.new(0, 10, 0, 10),
+                    ZIndex = 201,
+                    Parent = colorPickerFrame
+                })
+                
+                Utility:AddCorner(satValSelector, UDim.new(0, 6))
+                
+                local satValIndicator = Utility:Create("Frame", {
+                    Name = "Indicator",
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    Size = UDim2.new(0, 8, 0, 8),
+                    Position = UDim2.new(sat, -4, 1 - val, -4),
+                    ZIndex = 202,
+                    Parent = satValSelector
+                })
+                
+                Utility:AddCorner(satValIndicator, UDim.new(1, 0))
+                Utility:AddStroke(satValIndicator, Color3.fromRGB(0, 0, 0), 2)
+                
+                local hueSelector = Utility:Create("ImageLabel", {
+                    Name = "Hue",
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    Image = "rbxassetid://3641079629",
+                    Size = UDim2.new(1, -20, 0, 20),
+                    Position = UDim2.new(0, 10, 0, 170),
+                    ZIndex = 201,
+                    Parent = colorPickerFrame
+                })
+                
+                Utility:AddCorner(hueSelector, UDim.new(0, 6))
+                
+                local hueIndicator = Utility:Create("Frame", {
+                    Name = "Indicator",
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    Size = UDim2.new(0, 4, 1, 0),
+                    Position = UDim2.new(hue, -2, 0, 0),
+                    ZIndex = 202,
+                    Parent = hueSelector
+                })
+                
+                Utility:AddCorner(hueIndicator, UDim.new(1, 0))
+                Utility:AddStroke(hueIndicator, Color3.fromRGB(0, 0, 0), 1)
+                
+                local function updateColor(newColor, skipCallback)
+                    currentColor = newColor
+                    colorDisplay.BackgroundColor3 = newColor
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, newColor)
+                    end
+                    
+                    if not skipCallback then
+                        pcall(callback, newColor)
+                    end
+                end
+                
+                local draggingSatVal = false
+                local draggingHue = false
+                
+                satValSelector.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        draggingSatVal = true
+                        
+                        local function update()
+                            local mousePos = UserInputService:GetMouseLocation()
+                            local selectorPos = satValSelector.AbsolutePosition
+                            local selectorSize = satValSelector.AbsoluteSize
+                            
+                            sat = math.clamp((mousePos.X - selectorPos.X) / selectorSize.X, 0, 1)
+                            val = 1 - math.clamp((mousePos.Y - selectorPos.Y) / selectorSize.Y, 0, 1)
+                            
+                            satValIndicator.Position = UDim2.new(sat, -4, 1 - val, -4)
+                            
+                            local newColor = Color3.fromHSV(hue, sat, val)
+                            updateColor(newColor)
+                        end
+                        
+                        update()
+                        
+                        local connection
+                        connection = UserInputService.InputChanged:Connect(function(input2)
+                            if draggingSatVal and (input2.UserInputType == Enum.UserInputType.MouseMovement or input2.UserInputType == Enum.UserInputType.Touch) then
+                                update()
+                            end
+                        end)
+                        
+                        local endConnection
+                        endConnection = UserInputService.InputEnded:Connect(function(input2)
+                            if input2.UserInputType == Enum.UserInputType.MouseButton1 or input2.UserInputType == Enum.UserInputType.Touch then
+                                draggingSatVal = false
+                                connection:Disconnect()
+                                endConnection:Disconnect()
+                            end
+                        end)
+                    end
+                end)
+                
+                hueSelector.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        draggingHue = true
+                        
+                        local function update()
+                            local mousePos = UserInputService:GetMouseLocation()
+                            local selectorPos = hueSelector.AbsolutePosition
+                            local selectorSize = hueSelector.AbsoluteSize
+                            
+                            hue = math.clamp((mousePos.X - selectorPos.X) / selectorSize.X, 0, 1)
+                            
+                            hueIndicator.Position = UDim2.new(hue, -2, 0, 0)
+                            satValSelector.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+                            
+                            local newColor = Color3.fromHSV(hue, sat, val)
+                            updateColor(newColor)
+                        end
+                        
+                        update()
+                        
+                        local connection
+                        connection = UserInputService.InputChanged:Connect(function(input2)
+                            if draggingHue and (input2.UserInputType == Enum.UserInputType.MouseMovement or input2.UserInputType == Enum.UserInputType.Touch) then
+                                update()
+                            end
+                        end)
+                        
+                        local endConnection
+                        endConnection = UserInputService.InputEnded:Connect(function(input2)
+                            if input2.UserInputType == Enum.UserInputType.MouseButton1 or input2.UserInputType == Enum.UserInputType.Touch then
+                                draggingHue = false
+                                connection:Disconnect()
+                                endConnection:Disconnect()
+                            end
+                        end)
+                    end
+                end)
+                
+                colorDisplay.MouseButton1Click:Connect(function()
+                    colorPickerOpen = not colorPickerOpen
+                    colorPickerFrame.Visible = colorPickerOpen
+                    
+                    if colorPickerOpen then
+                        Utility:Tween(colorPickerFrame, {Size = UDim2.new(0, 220, 0, 200)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    else
+                        Utility:Tween(colorPickerFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+                            colorPickerFrame.Visible = false
+                        end)
+                    end
+                end)
+                
+                local ColorPicker = {}
+                function ColorPicker:Set(color)
+                    hue, sat, val = color:ToHSV()
+                    satValIndicator.Position = UDim2.new(sat, -4, 1 - val, -4)
+                    hueIndicator.Position = UDim2.new(hue, -2, 0, 0)
+                    satValSelector.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+                    updateColor(color, false)
+                end
+                
+                return ColorPicker
+            end
+            
+            --//======================================================
+            --// MULTI DROPDOWN ELEMENT
+            --//======================================================
+            
+            function Section:MultiDropdown(multiConfig)
+                local callback = multiConfig.Callback or function() end
+                local dropdownText = multiConfig.Text or "Multi Dropdown"
+                local options = multiConfig.Options or {"Option 1", "Option 2"}
+                local default = multiConfig.Default or {}
+                local flag = multiConfig.Flag
+                
+                local selectedValues = default
+                local dropdownOpen = false
+                
+                if flag then
+                    selectedValues = ConfigSystem:GetFlag(flag, default)
+                end
+                
+                local dropdownFrame = Utility:Create("Frame", {
+                    Name = "MultiDropdown",
+                    BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                    Size = UDim2.new(1, 0, 0, 75),
+                    ClipsDescendants = false,
+                    ZIndex = 6,
+                    Parent = sectionContent
+                })
+                
+                Utility:AddCorner(dropdownFrame, UDim.new(0, 8))
+                Utility:AddStroke(dropdownFrame, CurrentTheme.Border, 1, 0.4)
+                
+                local dropdownLabel = Utility:Create("TextLabel", {
+                    Name = "Label",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = dropdownText,
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 10),
+                    Size = UDim2.new(1, -30, 0, 20),
+                    ZIndex = 7,
+                    Parent = dropdownFrame
+                })
+                
+                local function getDisplayText()
+                    if #selectedValues == 0 then
+                        return "None"
+                    elseif #selectedValues == 1 then
+                        return selectedValues[1]
+                    else
+                        return selectedValues[1] .. " + " .. (#selectedValues - 1) .. " more"
+                    end
+                end
+                
+                local dropdownButton = Utility:Create("TextButton", {
+                    Name = "Button",
+                    BackgroundColor3 = CurrentTheme.Background,
+                    Font = Enum.Font.Gotham,
+                    Text = getDisplayText(),
+                    TextColor3 = CurrentTheme.Text,
+                    TextSize = 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, 15, 0, 35),
+                    Size = UDim2.new(1, -30, 0, 32),
+                    AutoButtonColor = false,
+                    ZIndex = 7,
+                    Parent = dropdownFrame
+                })
+                
+                Utility:AddCorner(dropdownButton, UDim.new(0, 6))
+                Utility:AddStroke(dropdownButton, CurrentTheme.Border, 1, 0.5)
+                Utility:AddPadding(dropdownButton, {Left = 10, Right = 35})
+                
+                local dropdownArrow = Utility:Create("TextLabel", {
+                    Name = "Arrow",
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = "▼",
+                    TextColor3 = CurrentTheme.TextSecondary,
+                    TextSize = 10,
+                    Position = UDim2.new(1, -25, 0, 0),
+                    Size = UDim2.new(0, 20, 1, 0),
+                    ZIndex = 8,
+                    Parent = dropdownButton
+                })
+                
+                local dropdownList = Utility:Create("ScrollingFrame", {
+                    Name = "List",
+                    BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Position = UDim2.new(0, 0, 1, 5),
+                    ScrollBarThickness = 4,
+                    ScrollBarImageColor3 = CurrentTheme.Primary,
+                    Visible = false,
+                    ZIndex = 100,
+                    Parent = dropdownButton
+                })
+                
+                Utility:AddCorner(dropdownList, UDim.new(0, 6))
+                Utility:AddStroke(dropdownList, CurrentTheme.Border, 1, 0.3)
+                Utility:AddPadding(dropdownList, {All = 5})
+                
+                local listLayout = Utility:Create("UIListLayout", {
+                    Padding = UDim.new(0, 3),
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Parent = dropdownList
+                })
+                
+                local function updateDropdown(skipCallback)
+                    dropdownButton.Text = getDisplayText()
+                    
+                    if flag then
+                        ConfigSystem:SetFlag(flag, selectedValues)
+                    end
+                    
+                    if not skipCallback then
+                        pcall(callback, selectedValues)
+                    end
+                end
+                
+                local function isSelected(value)
+                    for _, v in ipairs(selectedValues) do
+                        if v == value then
+                            return true
+                        end
+                    end
+                    return false
+                end
+                
+                local function toggleValue(value)
+                    local found = false
+                    for i, v in ipairs(selectedValues) do
+                        if v == value then
+                            table.remove(selectedValues, i)
+                            found = true
+                            break
+                        end
+                    end
+                    
+                    if not found then
+                        table.insert(selectedValues, value)
+                    end
+                    
+                    updateDropdown()
+                end
+                
+                local function toggleDropdown()
+                    dropdownOpen = not dropdownOpen
+                    dropdownList.Visible = dropdownOpen
+                    
+                    if dropdownOpen then
+                        local maxHeight = math.min(#options * 35, 150)
+                        Utility:Tween(dropdownList, {Size = UDim2.new(1, 0, 0, maxHeight)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                        Utility:Tween(dropdownArrow, {Rotation = 180}, 0.2)
+                        Utility:Tween(dropdownFrame, {Size = UDim2.new(1, 0, 0, 75 + maxHeight + 5)}, 0.2)
+                    else
+                        Utility:Tween(dropdownList, {Size = UDim2.new(1, 0, 0, 0)}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                        Utility:Tween(dropdownArrow, {Rotation = 0}, 0.2)
+                        Utility:Tween(dropdownFrame, {Size = UDim2.new(1, 0, 0, 75)}, 0.2)
+                    end
+                end
+                
+                dropdownButton.MouseButton1Click:Connect(function()
+                    toggleDropdown()
+                end)
+                
+                local optionButtons = {}
+                
+                for _, option in ipairs(options) do
+                    local optionButton = Utility:Create("TextButton", {
+                        Name = "Option",
+                        BackgroundColor3 = CurrentTheme.BackgroundTertiary,
+                        Font = Enum.Font.Gotham,
+                        Text = option,
+                        TextColor3 = CurrentTheme.Text,
+                        TextSize = 12,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        Size = UDim2.new(1, 0, 0, 30),
+                        AutoButtonColor = false,
+                        ZIndex = 101,
+                        Parent = dropdownList
+                    })
+                    
+                    Utility:AddCorner(optionButton, UDim.new(0, 5))
+                    Utility:AddPadding(optionButton, {Left = 35, Right = 10})
+                    
+                    local checkmark = Utility:Create("TextLabel", {
+                        Name = "Checkmark",
+                        BackgroundTransparency = 1,
+                        Font = Enum.Font.GothamBold,
+                        Text = "✓",
+                        TextColor3 = CurrentTheme.Primary,
+                        TextSize = 16,
+                        Position = UDim2.new(0, 10, 0, 0),
+                        Size = UDim2.new(0, 20, 1, 0),
+                        Visible = isSelected(option),
+                        ZIndex = 102,
+                        Parent = optionButton
+                    })
+                    
+                    optionButtons[option] = {Button = optionButton, Checkmark = checkmark}
+                    
+                    optionButton.MouseEnter:Connect(function()
+                        Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.Primary}, 0.15)
+                    end)
+                    
+                    optionButton.MouseLeave:Connect(function()
+                        Utility:Tween(optionButton, {BackgroundColor3 = CurrentTheme.BackgroundTertiary}, 0.15)
+                    end)
+                    
+                    optionButton.MouseButton1Click:Connect(function()
+                        toggleValue(option)
+                        checkmark.Visible = isSelected(option)
+                    end)
+                end
+                
+                listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    dropdownList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+                end)
+                
+                updateDropdown(true)
+                
+                local MultiDropdown = {}
+                function MultiDropdown:Set(values)
+                    selectedValues = values
+                    for option, components in pairs(optionButtons) do
+                        components.Checkmark.Visible = isSelected(option)
+                    end
+                    updateDropdown(false)
+                end
+                
+                return MultiDropdown
+            end
+            
             return Section
         end
+        
         return Tab
     end
+    
+    --//======================================================
+    --// WATERMARK
+    --//======================================================
+    
+    function Window:CreateWatermark(text)
+        local watermark = Utility:Create("Frame", {
+            Name = "Watermark",
+            BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+            Size = UDim2.new(0, 200, 0, 35),
+            Position = UDim2.new(0, 10, 0, 10),
+            ZIndex = 9999,
+            Parent = screenGui
+        })
+        
+        Utility:AddCorner(watermark, UDim.new(0, 8))
+        Utility:AddStroke(watermark, CurrentTheme.Border, 1, 0.3)
+        Utility:AddGlow(watermark, CurrentTheme.Glow, 0.3)
+        
+        local watermarkAccent = Utility:Create("Frame", {
+            Name = "Accent",
+            BackgroundColor3 = CurrentTheme.Primary,
+            Size = UDim2.new(1, 0, 0, 2),
+            Position = UDim2.new(0, 0, 1, -2),
+            BorderSizePixel = 0,
+            ZIndex = 10000,
+            Parent = watermark
+        })
+        
+        Utility:AddGradient(watermarkAccent, CurrentTheme.Primary, CurrentTheme.PrimaryLight, 90)
+        
+        local watermarkText = Utility:Create("TextLabel", {
+            Name = "Text",
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            Text = text or "Nexus UI",
+            TextColor3 = CurrentTheme.Text,
+            TextSize = 13,
+            Size = UDim2.new(1, -20, 1, -2),
+            Position = UDim2.new(0, 10, 0, 0),
+            ZIndex = 10000,
+            Parent = watermark
+        })
+        
+        return watermark
+    end
+    
+    --//======================================================
+    --// FPS COUNTER
+    --//======================================================
+    
+    function Window:CreateFPSCounter()
+        local fpsCounter = Utility:Create("Frame", {
+            Name = "FPSCounter",
+            BackgroundColor3 = CurrentTheme.BackgroundSecondary,
+            Size = UDim2.new(0, 100, 0, 35),
+            Position = UDim2.new(1, -110, 0, 10),
+            ZIndex = 9999,
+            Parent = screenGui
+        })
+        
+        Utility:AddCorner(fpsCounter, UDim.new(0, 8))
+        Utility:AddStroke(fpsCounter, CurrentTheme.Border, 1, 0.3)
+        
+        local fpsAccent = Utility:Create("Frame", {
+            Name = "Accent",
+            BackgroundColor3 = CurrentTheme.Primary,
+            Size = UDim2.new(1, 0, 0, 2),
+            Position = UDim2.new(0, 0, 1, -2),
+            BorderSizePixel = 0,
+            ZIndex = 10000,
+            Parent = fpsCounter
+        })
+        
+        local fpsText = Utility:Create("TextLabel", {
+            Name = "Text",
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            Text = "FPS: 60",
+            TextColor3 = CurrentTheme.Text,
+            TextSize = 13,
+            Size = UDim2.new(1, 0, 1, -2),
+            ZIndex = 10000,
+            Parent = fpsCounter
+        })
+        
+        local lastUpdate = tick()
+        local frameCount = 0
+        
+        RunService.RenderStepped:Connect(function()
+            frameCount = frameCount + 1
+            
+            if tick() - lastUpdate >= 1 then
+                local fps = frameCount
+                fpsText.Text = "FPS: " .. fps
+                
+                if fps >= 60 then
+                    fpsText.TextColor3 = CurrentTheme.Success
+                elseif fps >= 30 then
+                    fpsText.TextColor3 = CurrentTheme.Warning
+                else
+                    fpsText.TextColor3 = CurrentTheme.Error
+                end
+                
+                frameCount = 0
+                lastUpdate = tick()
+            end
+        end)
+        
+        return fpsCounter
+    end
+    
+    --//======================================================
+    --// KEYBIND TOGGLE
+    --//======================================================
+    
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+            Window:Toggle()
+        end
+    end)
+    
+    --//======================================================
+    --// CLEANUP ON DESTROY
+    --//======================================================
+    
+    function Window:Destroy()
+        ConnectionManager:DisconnectAll()
+        Utility:Tween(blur, {Size = 0}, 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In, function()
+            blur:Destroy()
+        end)
+        screenGui:Destroy()
+    end
+    
+    --//======================================================
+    --// NOTIFICATION
+    --//======================================================
+    
+    function Window:Notify(config)
+        return NotificationSystem:Send(config)
+    end
+    
+    --//======================================================
+    --// CONFIG MANAGEMENT
+    --//======================================================
+    
+    function Window:SaveConfig()
+        return ConfigSystem:SaveConfig()
+    end
+    
+    function Window:LoadConfig()
+        return ConfigSystem:LoadConfig()
+    end
+    
+    function Window:DeleteConfig()
+        return ConfigSystem:DeleteConfig()
+    end
+    
+    --//======================================================
+    --// WELCOME NOTIFICATION
+    --//======================================================
+    
+    task.delay(0.5, function()
+        Window:Notify({
+            Title = "Welcome!",
+            Description = "Nexus UI loaded successfully",
+            Type = "Success",
+            Duration = 4
+        })
+    end)
     
     return Window
 end
 
---//=======================================================================================
---// INITIALIZATION & RETURN
---//=======================================================================================
+--//======================================================
+--// RETURN LIBRARY
+--//======================================================
 
-ConfigSystem:Init()
-
-function NeonPrime:SaveConfig(name)
-    ConfigSystem:Save(name)
-end
-
-function NeonPrime:LoadConfig(name)
-    ConfigSystem:Load(name)
-end
-
-function NeonPrime:Notify(title, text, duration, typeIcon)
-    NotificationSystem:Notify(title, text, duration, typeIcon)
-end
-
-function NeonPrime:SetThemeColor(property, color)
-    if NeonPrime.Theme[property] then
-        NeonPrime.Theme[property] = color
-        -- Note: In a fully reactive system, this would fire an event. For this scale,
-        -- it updates the table. New elements use the new color.
-    end
-end
-
--- Cleanup Logic for Re-execution
-function NeonPrime:Destroy()
-    for _, conn in pairs(self.Connections) do
-        if typeof(conn) == "RBXScriptConnection" then conn:Disconnect() end
-    end
-    for _, inst in pairs(self.Instances) do
-        if typeof(inst) == "Instance" and inst.Parent then inst:Destroy() end
-    end
-    table.clear(self.Connections)
-    table.clear(self.Instances)
-end
-
-return Library
+return NexusUI
