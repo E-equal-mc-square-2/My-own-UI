@@ -5,16 +5,18 @@ local Library = loadstring(game:HttpGet(
 --// WINDOW
 
 local Window = Library:CreateWindow({
-    Title = "Kilometres UI X1",
-    Subtitle = "UI3 Full Example"
+    Title = "Kilometres UI X",
+    Subtitle = "FULL ELEMENT SHOWCASE"
 })
 
+--// =====================================================================
 --// TABS
+--// =====================================================================
 
 local Main = Library:CreateTab("Main")
+local Combat = Library:CreateTab("Combat")
 local Visuals = Library:CreateTab("Visuals")
 local Player = Library:CreateTab("Player")
-local Misc = Library:CreateTab("Misc")
 local Settings = Library:CreateTab("Settings")
 
 --// =====================================================================
@@ -24,11 +26,11 @@ local Settings = Library:CreateTab("Settings")
 local Farming = Main:CreateSection("Farming")
 
 Farming:Button("Collect Coins", function()
-    print("Collected coins")
+    print("Coins Collected")
 end)
 
 Farming:Button("Open Crate", function()
-    print("Crate opened")
+    print("Crate Opened")
 end)
 
 Farming:Toggle("Auto Farm", false, function(v)
@@ -39,18 +41,34 @@ Farming:Toggle("Auto Rebirth", false, function(v)
     print("Auto Rebirth:", v)
 end)
 
-local Combat = Main:CreateSection("Combat")
-
-Combat:Button("Kill Aura", function()
-    print("Aura activated")
+Farming:Toggle("Auto Spin", false, function(v)
+    print("Auto Spin:", v)
 end)
 
-Combat:Toggle("Silent Aim", false, function(v)
+--// =====================================================================
+--// COMBAT TAB
+--// =====================================================================
+
+local Aura = Combat:CreateSection("Combat")
+
+Aura:Button("Kill Aura", function()
+    print("Kill Aura Activated")
+end)
+
+Aura:Button("Hit All", function()
+    print("Hit All")
+end)
+
+Aura:Toggle("Silent Aim", false, function(v)
     print("Silent Aim:", v)
 end)
 
-Combat:Toggle("Auto Attack", false, function(v)
+Aura:Toggle("Auto Attack", false, function(v)
     print("Auto Attack:", v)
+end)
+
+Aura:Toggle("Critical Hits", false, function(v)
+    print("Critical Hits:", v)
 end)
 
 --// =====================================================================
@@ -67,21 +85,31 @@ ESP:Toggle("Box ESP", false, function(v)
     print("Box ESP:", v)
 end)
 
-ESP:Toggle("Name ESP", false, function(v)
-    print("Name ESP:", v)
+ESP:Toggle("Tracer ESP", false, function(v)
+    print("Tracer ESP:", v)
 end)
 
 ESP:Toggle("Health ESP", false, function(v)
     print("Health ESP:", v)
 end)
 
+ESP:Button("Refresh ESP", function()
+    print("ESP Refreshed")
+end)
+
 local World = Visuals:CreateSection("World")
 
 World:Button("Full Bright", function()
-    game:GetService("Lighting").Brightness = 5
+
+    local Lighting = game:GetService("Lighting")
+
+    Lighting.Brightness = 5
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
 end)
 
 World:Button("Remove Fog", function()
+
     game:GetService("Lighting").FogEnd = 100000
 end)
 
@@ -96,29 +124,49 @@ end)
 local Character = Player:CreateSection("Character")
 
 Character:Button("Reset Character", function()
+
     game.Players.LocalPlayer.Character:BreakJoints()
+end)
+
+Character:Button("Sit", function()
+
+    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+
+    if Humanoid then
+        Humanoid.Sit = true
+    end
 end)
 
 Character:Toggle("Infinite Jump", false, function(v)
     print("Infinite Jump:", v)
 end)
 
-Character:Toggle("Noclip", false, function(v)
-    print("Noclip:", v)
-end)
-
 Character:Toggle("Fly", false, function(v)
     print("Fly:", v)
 end)
 
-local Movement = Player:CreateSection("Movement")
-
-Movement:Button("Speed x2", function()
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 32
+Character:Toggle("Noclip", false, function(v)
+    print("Noclip:", v)
 end)
 
-Movement:Button("JumpPower x2", function()
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
+local Movement = Player:CreateSection("Movement")
+
+Movement:Button("WalkSpeed 32", function()
+
+    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+
+    if Humanoid then
+        Humanoid.WalkSpeed = 32
+    end
+end)
+
+Movement:Button("JumpPower 100", function()
+
+    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+
+    if Humanoid then
+        Humanoid.JumpPower = 100
+    end
 end)
 
 Movement:Toggle("Sprint", false, function(v)
@@ -126,49 +174,28 @@ Movement:Toggle("Sprint", false, function(v)
 end)
 
 --// =====================================================================
---// MISC TAB
---// =====================================================================
-
-local Fun = Misc:CreateSection("Fun")
-
-Fun:Button("Dance", function()
-    print("Dance animation")
-end)
-
-Fun:Button("Play Sound", function()
-    print("Sound played")
-end)
-
-Fun:Toggle("Spam Chat", false, function(v)
-    print("Spam Chat:", v)
-end)
-
-Fun:Toggle("Annoy Mode", false, function(v)
-    print("Annoy Mode:", v)
-end)
-
-local Server = Misc:CreateSection("Server")
-
-Server:Button("Rejoin Server", function()
-    game:GetService("TeleportService"):Teleport(
-        game.PlaceId,
-        game.Players.LocalPlayer
-    )
-end)
-
-Server:Button("Copy JobId", function()
-    setclipboard(game.JobId)
-end)
-
-Server:Toggle("Auto Rejoin", false, function(v)
-    print("Auto Rejoin:", v)
-end)
-
---// =====================================================================
 --// SETTINGS TAB
 --// =====================================================================
 
-local UI = Settings:CreateSection("UI")
+local UI = Settings:CreateSection("UI Settings")
+
+UI:Button("Hide UI", function()
+
+    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
+
+    if gui then
+        gui.Enabled = false
+    end
+end)
+
+UI:Button("Show UI", function()
+
+    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
+
+    if gui then
+        gui.Enabled = true
+    end
+end)
 
 UI:Button("Destroy UI", function()
 
@@ -179,10 +206,6 @@ UI:Button("Destroy UI", function()
     end
 end)
 
-UI:Button("Print Theme", function()
-    print("Theme Loaded")
-end)
-
 UI:Toggle("Blur Background", false, function(v)
     print("Blur:", v)
 end)
@@ -191,18 +214,22 @@ UI:Toggle("Notifications", true, function(v)
     print("Notifications:", v)
 end)
 
+UI:Toggle("Save Config", true, function(v)
+    print("Save Config:", v)
+end)
+
 --// =====================================================================
---// EXTRA DEMO
+--// EXTRA MASS ELEMENT TEST
 --// =====================================================================
 
-local Extra = Settings:CreateSection("Extra")
+local Stress = Settings:CreateSection("Stress Test")
 
-for i = 1, 10 do
+for i = 1, 20 do
 
-    Extra:Button("Extra Button "..i, function()
+    Stress:Button("Extra Button "..i, function()
         print("Clicked:", i)
     end)
 
 end
 
-print("Kilometres UI Example Loaded")
+print("Kilometres UI X Example Loaded")
