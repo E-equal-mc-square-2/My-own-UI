@@ -1,0 +1,309 @@
+--// KILOMETRES UI V5 EXAMPLE
+--// Uses all available systems/elements
+
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
+
+----------------------------------------------------------------
+-- EXTRA TABS
+----------------------------------------------------------------
+
+local MainTab = UI:CreateTab("Main")
+local CombatTab = UI:CreateTab("Combat")
+local VisualTab = UI:CreateTab("Visual")
+local UtilityTab = UI:CreateTab("Utility")
+
+----------------------------------------------------------------
+-- MAIN TOGGLES
+----------------------------------------------------------------
+
+UI:CreateToggle(MainTab, "Auto Farm", false, function(v)
+	print("Auto Farm:", v)
+end)
+
+UI:CreateToggle(MainTab, "Auto Collect", true, function(v)
+	print("Auto Collect:", v)
+end)
+
+UI:CreateToggle(MainTab, "Auto Rebirth", false, function(v)
+	print("Auto Rebirth:", v)
+end)
+
+UI:CreateToggle(MainTab, "Anti AFK", true, function(v)
+	print("Anti AFK:", v)
+end)
+
+----------------------------------------------------------------
+-- COMBAT TOGGLES
+----------------------------------------------------------------
+
+UI:CreateToggle(CombatTab, "Kill Aura", false, function(v)
+	print("Kill Aura:", v)
+end)
+
+UI:CreateToggle(CombatTab, "Silent Aim", false, function(v)
+	print("Silent Aim:", v)
+end)
+
+UI:CreateToggle(CombatTab, "ESP Players", true, function(v)
+	print("ESP Players:", v)
+end)
+
+UI:CreateToggle(CombatTab, "Hitbox Expand", false, function(v)
+	print("Hitbox Expand:", v)
+end)
+
+----------------------------------------------------------------
+-- VISUAL TOGGLES
+----------------------------------------------------------------
+
+UI:CreateToggle(VisualTab, "FullBright", false, function(v)
+	print("FullBright:", v)
+
+	if v then
+		game:GetService("Lighting").Brightness = 5
+	else
+		game:GetService("Lighting").Brightness = 2
+	end
+end)
+
+UI:CreateToggle(VisualTab, "Shadows", true, function(v)
+	print("Shadows:", v)
+
+	game:GetService("Lighting").GlobalShadows = v
+end)
+
+UI:CreateToggle(VisualTab, "Bloom Effect", true, function(v)
+	print("Bloom:", v)
+end)
+
+UI:CreateToggle(VisualTab, "Particles", true, function(v)
+	print("Particles:", v)
+end)
+
+----------------------------------------------------------------
+-- UTILITY TOGGLES
+----------------------------------------------------------------
+
+UI:CreateToggle(UtilityTab, "Infinite Jump", false, function(v)
+	print("Infinite Jump:", v)
+end)
+
+UI:CreateToggle(UtilityTab, "Fly", false, function(v)
+	print("Fly:", v)
+end)
+
+UI:CreateToggle(UtilityTab, "NoClip", false, function(v)
+	print("NoClip:", v)
+end)
+
+UI:CreateToggle(UtilityTab, "Speed Boost", false, function(v)
+	print("Speed Boost:", v)
+
+	local humanoid = game.Players.LocalPlayer.Character and
+		game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+
+	if humanoid then
+		humanoid.WalkSpeed = v and 50 or 16
+	end
+end)
+
+----------------------------------------------------------------
+-- CUSTOM UI OBJECTS INSIDE TABS
+----------------------------------------------------------------
+
+-- LABEL EXAMPLE
+local Label = Instance.new("TextLabel")
+Label.Size = UDim2.new(1, -10, 0, 40)
+Label.BackgroundTransparency = 1
+Label.Text = "KilometresUI V5 Example"
+Label.Font = Enum.Font.GothamBold
+Label.TextSize = 22
+Label.TextColor3 = UI.Themes[UI.Theme].Accent
+Label.Parent = MainTab
+
+-- BUTTON EXAMPLE
+local Button = Instance.new("TextButton")
+Button.Size = UDim2.new(1, -10, 0, 45)
+Button.BackgroundColor3 = UI.Themes[UI.Theme].Accent
+Button.Text = "Show Notification"
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 16
+Button.TextColor3 = Color3.new(1,1,1)
+Button.Parent = MainTab
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 12)
+ButtonCorner.Parent = Button
+
+Button.MouseButton1Click:Connect(function()
+	print("Notification Button Clicked")
+end)
+
+----------------------------------------------------------------
+-- DROPDOWN STYLE EXAMPLE
+----------------------------------------------------------------
+
+local Dropdown = Instance.new("TextButton")
+Dropdown.Size = UDim2.new(1, -10, 0, 45)
+Dropdown.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
+Dropdown.Text = "Select Weapon"
+Dropdown.Font = Enum.Font.GothamBold
+Dropdown.TextSize = 15
+Dropdown.TextColor3 = UI.Themes[UI.Theme].Text
+Dropdown.Parent = CombatTab
+
+local DropCorner = Instance.new("UICorner")
+DropCorner.CornerRadius = UDim.new(0,12)
+DropCorner.Parent = Dropdown
+
+local Weapons = {
+	"Sword",
+	"Gun",
+	"Magic",
+	"Bow"
+}
+
+local Current = 1
+
+Dropdown.MouseButton1Click:Connect(function()
+	Current += 1
+
+	if Current > #Weapons then
+		Current = 1
+	end
+
+	Dropdown.Text = "Weapon: "..Weapons[Current]
+
+	print("Selected:", Weapons[Current])
+end)
+
+----------------------------------------------------------------
+-- SLIDER STYLE EXAMPLE
+----------------------------------------------------------------
+
+local SliderFrame = Instance.new("Frame")
+SliderFrame.Size = UDim2.new(1,-10,0,60)
+SliderFrame.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
+SliderFrame.Parent = UtilityTab
+
+local SliderCorner = Instance.new("UICorner")
+SliderCorner.CornerRadius = UDim.new(0,12)
+SliderCorner.Parent = SliderFrame
+
+local SliderBar = Instance.new("Frame")
+SliderBar.Size = UDim2.new(0.8,0,0,8)
+SliderBar.Position = UDim2.new(0.1,0,0.6,0)
+SliderBar.BackgroundColor3 = Color3.fromRGB(60,60,60)
+SliderBar.Parent = SliderFrame
+
+local SliderBarCorner = Instance.new("UICorner")
+SliderBarCorner.CornerRadius = UDim.new(1,0)
+SliderBarCorner.Parent = SliderBar
+
+local Fill = Instance.new("Frame")
+Fill.Size = UDim2.new(0.4,0,1,0)
+Fill.BackgroundColor3 = UI.Themes[UI.Theme].Accent
+Fill.Parent = SliderBar
+
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(1,0)
+FillCorner.Parent = Fill
+
+local SliderText = Instance.new("TextLabel")
+SliderText.BackgroundTransparency = 1
+SliderText.Size = UDim2.new(1,0,0,25)
+SliderText.Text = "WalkSpeed: 40"
+SliderText.Font = Enum.Font.GothamBold
+SliderText.TextColor3 = UI.Themes[UI.Theme].Text
+SliderText.TextSize = 14
+SliderText.Parent = SliderFrame
+
+----------------------------------------------------------------
+-- TEXTBOX EXAMPLE
+----------------------------------------------------------------
+
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(1,-10,0,45)
+TextBox.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
+TextBox.PlaceholderText = "Enter custom text..."
+TextBox.Text = ""
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 15
+TextBox.TextColor3 = UI.Themes[UI.Theme].Text
+TextBox.Parent = MainTab
+
+local TextCorner = Instance.new("UICorner")
+TextCorner.CornerRadius = UDim.new(0,12)
+TextCorner.Parent = TextBox
+
+TextBox.FocusLost:Connect(function()
+	print("Textbox Value:", TextBox.Text)
+end)
+
+----------------------------------------------------------------
+-- LIVE THEME CYCLER
+----------------------------------------------------------------
+
+local ThemeButton = Instance.new("TextButton")
+ThemeButton.Size = UDim2.new(1,-10,0,45)
+ThemeButton.BackgroundColor3 = UI.Themes[UI.Theme].Accent
+ThemeButton.Text = "Cycle Theme"
+ThemeButton.Font = Enum.Font.GothamBold
+ThemeButton.TextSize = 16
+ThemeButton.TextColor3 = Color3.new(1,1,1)
+ThemeButton.Parent = VisualTab
+
+local ThemeCorner = Instance.new("UICorner")
+ThemeCorner.CornerRadius = UDim.new(0,12)
+ThemeCorner.Parent = ThemeButton
+
+local ThemeOrder = {
+	"Midnight",
+	"Neon",
+	"Sakura",
+	"Frost"
+}
+
+local ThemeIndex = 1
+
+ThemeButton.MouseButton1Click:Connect(function()
+
+	ThemeIndex += 1
+
+	if ThemeIndex > #ThemeOrder then
+		ThemeIndex = 1
+	end
+
+	local NewTheme = ThemeOrder[ThemeIndex]
+
+	UI.Theme = NewTheme
+
+	print("Changed Theme:", NewTheme)
+end)
+
+----------------------------------------------------------------
+-- KEYBIND EXAMPLE
+----------------------------------------------------------------
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
+
+	if gpe then
+		return
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		print("RightShift Pressed")
+	end
+
+	if input.KeyCode == Enum.KeyCode.F then
+		print("F Keybind Triggered")
+	end
+
+end)
+
+----------------------------------------------------------------
+-- STARTUP MESSAGE
+----------------------------------------------------------------
+
+print("KilometresUI V5 Example Loaded")
+print("All major systems initialized")
