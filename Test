@@ -1,3 +1,8 @@
+--// ======================================================================
+--// KILOMETRES UI X V3 - FULL EXAMPLE
+--// Uses MOST elements from UI3
+--// ======================================================================
+
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"
 ))()
@@ -6,79 +11,94 @@ local Library = loadstring(game:HttpGet(
 
 local Window = Library:CreateWindow({
     Title = "Kilometres UI X",
-    Subtitle = "FULL ELEMENT SHOWCASE"
+    Subtitle = "Ultimate Example",
+    Theme = "CyberNeo",
+    SaveSettings = true,
+    KeySystem = false
 })
 
---// =====================================================================
 --// TABS
---// =====================================================================
 
 local Main = Library:CreateTab("Main")
-local Combat = Library:CreateTab("Combat")
-local Visuals = Library:CreateTab("Visuals")
 local Player = Library:CreateTab("Player")
+local Visuals = Library:CreateTab("Visuals")
+local Farming = Library:CreateTab("Farm")
+local Misc = Library:CreateTab("Misc")
 local Settings = Library:CreateTab("Settings")
 
---// =====================================================================
+--// ======================================================================
 --// MAIN TAB
---// =====================================================================
+--// ======================================================================
 
-local Farming = Main:CreateSection("Farming")
+local Welcome = Main:CreateSection("Welcome")
 
-Farming:Button("Collect Coins", function()
-    print("Coins Collected")
+Welcome:Button("Print Hello", function()
+    print("Hello from Kilometres UI X")
 end)
 
-Farming:Button("Open Crate", function()
-    print("Crate Opened")
+Welcome:Toggle("Auto Notification", false, function(v)
+    print("Notification Toggle:", v)
 end)
 
-Farming:Toggle("Auto Farm", false, function(v)
-    print("Auto Farm:", v)
+Welcome:Slider("Notification Volume", 0, 100, 50, function(v)
+    print("Volume:", v)
 end)
 
-Farming:Toggle("Auto Rebirth", false, function(v)
-    print("Auto Rebirth:", v)
+Welcome:Textbox("Custom Message", "Type message...", function(text)
+    print("Message:", text)
 end)
 
-Farming:Toggle("Auto Spin", false, function(v)
-    print("Auto Spin:", v)
+--// ======================================================================
+--// PLAYER TAB
+--// ======================================================================
+
+local Character = Player:CreateSection("Character")
+
+Character:Slider("WalkSpeed", 16, 200, 16, function(v)
+    local hum = game.Players.LocalPlayer.Character and
+        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+    if hum then
+        hum.WalkSpeed = v
+    end
 end)
 
---// =====================================================================
---// COMBAT TAB
---// =====================================================================
+Character:Slider("JumpPower", 50, 250, 50, function(v)
+    local hum = game.Players.LocalPlayer.Character and
+        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 
-local Aura = Combat:CreateSection("Combat")
-
-Aura:Button("Kill Aura", function()
-    print("Kill Aura Activated")
+    if hum then
+        hum.JumpPower = v
+    end
 end)
 
-Aura:Button("Hit All", function()
-    print("Hit All")
+Character:Toggle("Infinite Jump", false, function(v)
+    getgenv().InfiniteJump = v
 end)
 
-Aura:Toggle("Silent Aim", false, function(v)
-    print("Silent Aim:", v)
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if getgenv().InfiniteJump then
+        local hum = game.Players.LocalPlayer.Character and
+            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end)
 
-Aura:Toggle("Auto Attack", false, function(v)
-    print("Auto Attack:", v)
+Character:Button("Reset Character", function()
+    game.Players.LocalPlayer.Character:BreakJoints()
 end)
 
-Aura:Toggle("Critical Hits", false, function(v)
-    print("Critical Hits:", v)
-end)
-
---// =====================================================================
---// VISUALS TAB
---// =====================================================================
+--// ======================================================================
+--// VISUAL TAB
+--// ======================================================================
 
 local ESP = Visuals:CreateSection("ESP")
 
 ESP:Toggle("Player ESP", false, function(v)
-    print("Player ESP:", v)
+    print("ESP:", v)
 end)
 
 ESP:Toggle("Box ESP", false, function(v)
@@ -89,147 +109,142 @@ ESP:Toggle("Tracer ESP", false, function(v)
     print("Tracer ESP:", v)
 end)
 
-ESP:Toggle("Health ESP", false, function(v)
-    print("Health ESP:", v)
+ESP:Slider("ESP Distance", 50, 5000, 1000, function(v)
+    print("Distance:", v)
 end)
 
 ESP:Button("Refresh ESP", function()
-    print("ESP Refreshed")
+    print("Refreshing ESP...")
 end)
 
-local World = Visuals:CreateSection("World")
+--// ======================================================================
+--// FARM TAB
+--// ======================================================================
 
-World:Button("Full Bright", function()
+local AutoFarm = Farming:CreateSection("Automation")
 
-    local Lighting = game:GetService("Lighting")
+AutoFarm:Toggle("Auto Farm", false, function(v)
+    getgenv().AutoFarm = v
 
-    Lighting.Brightness = 5
-    Lighting.ClockTime = 14
-    Lighting.FogEnd = 100000
+    task.spawn(function()
+        while getgenv().AutoFarm do
+            task.wait(1)
+            print("Auto Farming...")
+        end
+    end)
 end)
 
-World:Button("Remove Fog", function()
-
-    game:GetService("Lighting").FogEnd = 100000
+AutoFarm:Toggle("Auto Sell", false, function(v)
+    print("Auto Sell:", v)
 end)
 
-World:Toggle("Rainbow World", false, function(v)
-    print("Rainbow World:", v)
+AutoFarm:Slider("Farm Speed", 1, 50, 10, function(v)
+    print("Farm Speed:", v)
 end)
 
---// =====================================================================
---// PLAYER TAB
---// =====================================================================
-
-local Character = Player:CreateSection("Character")
-
-Character:Button("Reset Character", function()
-
-    game.Players.LocalPlayer.Character:BreakJoints()
+AutoFarm:Textbox("Selected Mob", "Mob Name...", function(text)
+    print("Selected Mob:", text)
 end)
 
-Character:Button("Sit", function()
+--// ======================================================================
+--// MISC TAB
+--// ======================================================================
 
-    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+local Utility = Misc:CreateSection("Utility")
 
-    if Humanoid then
-        Humanoid.Sit = true
+Utility:Button("Rejoin Server", function()
+    game:GetService("TeleportService"):Teleport(
+        game.PlaceId,
+        game.Players.LocalPlayer
+    )
+end)
+
+Utility:Button("Copy Discord", function()
+    if setclipboard then
+        setclipboard("discord.gg/example")
     end
 end)
 
-Character:Toggle("Infinite Jump", false, function(v)
-    print("Infinite Jump:", v)
-end)
+Utility:Toggle("Anti AFK", true, function(v)
 
-Character:Toggle("Fly", false, function(v)
-    print("Fly:", v)
-end)
+    if v then
+        local vu = game:GetService("VirtualUser")
 
-Character:Toggle("Noclip", false, function(v)
-    print("Noclip:", v)
-end)
-
-local Movement = Player:CreateSection("Movement")
-
-Movement:Button("WalkSpeed 32", function()
-
-    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-
-    if Humanoid then
-        Humanoid.WalkSpeed = 32
+        game.Players.LocalPlayer.Idled:Connect(function()
+            vu:CaptureController()
+            vu:ClickButton2(Vector2.new())
+        end)
     end
 end)
 
-Movement:Button("JumpPower 100", function()
-
-    local Humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-
-    if Humanoid then
-        Humanoid.JumpPower = 100
-    end
+Utility:Textbox("Custom Executor Name", "Fluxus / Delta / Solara", function(text)
+    print("Executor:", text)
 end)
 
-Movement:Toggle("Sprint", false, function(v)
-    print("Sprint:", v)
-end)
-
---// =====================================================================
+--// ======================================================================
 --// SETTINGS TAB
---// =====================================================================
+--// ======================================================================
 
 local UI = Settings:CreateSection("UI Settings")
 
+UI:Button("Theme: Default", function()
+    Window:SetTheme("Default")
+end)
+
+UI:Button("Theme: Liquid Glass", function()
+    Window:SetTheme("LiquidGlass")
+end)
+
+UI:Button("Theme: Cyber Neo", function()
+    Window:SetTheme("CyberNeo")
+end)
+
+UI:Button("Theme: 3066 Years", function()
+    Window:SetTheme("Year3066")
+end)
+
 UI:Button("Hide UI", function()
-
-    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
-
-    if gui then
-        gui.Enabled = false
-    end
+    Window:Hide()
 end)
 
 UI:Button("Show UI", function()
+    Window:Show()
+end)
 
-    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
+UI:Slider("Window Width", 500, 1400, 900, function(v)
+    local state = Window:GetState()
 
-    if gui then
-        gui.Enabled = true
-    end
+    Window:SetSize(v, state.Height)
+end)
+
+UI:Slider("Window Height", 300, 900, 620, function(v)
+    local state = Window:GetState()
+
+    Window:SetSize(state.Width, v)
+end)
+
+UI:Slider("Window Offset X", -500, 500, 0, function(v)
+    local state = Window:GetState()
+
+    Window:SetOffset(v, state.OffsetY)
+end)
+
+UI:Slider("Window Offset Y", -300, 300, 0, function(v)
+    local state = Window:GetState()
+
+    Window:SetOffset(state.OffsetX, v)
+end)
+
+UI:Textbox("Base64 Key", "Paste Base64...", function(text)
+    print("Base64:", text)
 end)
 
 UI:Button("Destroy UI", function()
-
-    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
-
-    if gui then
-        gui:Destroy()
-    end
+    Window:Destroy()
 end)
 
-UI:Toggle("Blur Background", false, function(v)
-    print("Blur:", v)
-end)
-
-UI:Toggle("Notifications", true, function(v)
-    print("Notifications:", v)
-end)
-
-UI:Toggle("Save Config", true, function(v)
-    print("Save Config:", v)
-end)
-
---// =====================================================================
---// EXTRA MASS ELEMENT TEST
---// =====================================================================
-
-local Stress = Settings:CreateSection("Stress Test")
-
-for i = 1, 20 do
-
-    Stress:Button("Extra Button "..i, function()
-        print("Clicked:", i)
-    end)
-
-end
+--// ======================================================================
+--// STARTUP MESSAGE
+--// ======================================================================
 
 print("Kilometres UI X Example Loaded")
