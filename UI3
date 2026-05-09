@@ -1,0 +1,1479 @@
+--// Nexora UI Library - Upgraded Purple Mobile-First Edition
+--// Single-file module
+--// Goals:
+--// - Clean architecture
+--// - Better mobile + desktop layout
+--// - Safe dragging + click separation
+--// - Theme binding + smooth transitions
+--// - Simple, stable API
+
+local Nexora = {}
+
+--// Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--// Constants
+local DEFAULT_DISPLAY_ORDER = 99999
+local MOBILE_BREAKPOINT = 900
+local ORB_SIZE = 62
+local WINDOW_CORNER = 18
+local SHADOW_IMAGE = "rbxassetid://6015897843"
+local GLOW_IMAGE = "rbxassetid://4996891970"
+
+--// Themes
+local Themes = {
+	Void = {
+		Background = Color3.fromRGB(10, 8, 16),
+		Surface = Color3.fromRGB(17, 14, 27),
+		Surface2 = Color3.fromRGB(24, 20, 38),
+		Accent = Color3.fromRGB(164, 80, 255),
+		Accent2 = Color3.fromRGB(214, 140, 255),
+		Text = Color3.fromRGB(245, 242, 255),
+		SubText = Color3.fromRGB(190, 180, 220),
+		Stroke = Color3.fromRGB(164, 80, 255),
+		Glow = Color3.fromRGB(164, 80, 255),
+	},
+	Glass = {
+		Background = Color3.fromRGB(20, 16, 28),
+		Surface = Color3.fromRGB(34, 28, 46),
+		Surface2 = Color3.fromRGB(44, 36, 58),
+		Accent = Color3.fromRGB(176, 94, 255),
+		Accent2 = Color3.fromRGB(238, 198, 255),
+		Text = Color3.fromRGB(255, 250, 255),
+		SubText = Color3.fromRGB(220, 205, 235),
+		Stroke = Color3.fromRGB(190, 128, 255),
+		Glow = Color3.fromRGB(190, 128, 255),
+	},
+	Zenith = {
+		Background = Color3.fromRGB(11, 14, 24),
+		Surface = Color3.fromRGB(19, 23, 38),
+		Surface2 = Color3.fromRGB(28, 34, 52),
+		Accent = Color3.fromRGB(133, 92, 255),
+		Accent2 = Color3.fromRGB(191, 168, 255),
+		Text = Color3.fromRGB(245, 245, 255),
+		SubText = Color3.fromRGB(185, 190, 220),
+		Stroke = Color3.fromRGB(133, 92, 255),
+		Glow = Color3.fromRGB(133, 92, 255),
+	},
+	Nova = {
+		Background = Color3.fromRGB(14, 10, 22),
+		Surface = Color3.fromRGB(23, 18, 35),
+		Surface2 = Color3.fromRGB(34, 26, 51),
+		Accent = Color3.fromRGB(155, 76, 255),
+		Accent2 = Color3.fromRGB(230, 188, 255),
+		Text = Color3.fromRGB(250, 247, 255),
+		SubText = Color3.fromRGB(200, 185, 220),
+		Stroke = Color3.fromRGB(155, 76, 255),
+		Glow = Color3.fromRGB(155, 76, 255),
+	},
+	Eclipse = {
+		Background = Color3.fromRGB(16, 8, 18),
+		Surface = Color3.fromRGB(28, 16, 32),
+		Surface2 = Color3.fromRGB(40, 24, 46),
+		Accent = Color3.fromRGB(203, 92, 255),
+		Accent2 = Color3.fromRGB(255, 195, 246),
+		Text = Color3.fromRGB(255, 248, 255),
+		SubText = Color3.fromRGB(224, 190, 230),
+		Stroke = Color3.fromRGB(203, 92, 255),
+		Glow = Color3.fromRGB(203, 92, 255),
+	},
+}
+
+--// Utilities
+local function create(className, props)
+	local obj = Instance.new(className)
+	for k, v in pairs(props or {}) do
+		obj[k] = v
+	end
+	return obj
+end
+
+local function tween(obj, props, duration, style, direction)
+	local info = TweenInfo.new(
+		duration or 0.25,
+		style or Enum.EasingStyle.Quint,
+		direction or Enum.EasingDirection.Out
+	)
+	local t = TweenService:Create(obj, info, props)
+	t:Play()
+	return t
+end
+
+local function isMobile()
+	local camera = workspace.CurrentCamera
+	return UserInputService.TouchEnabled and camera and camera.ViewportSize.X < MOBILE_BREAKPOINT
+end
+
+local function getViewport()
+	local camera = workspace.CurrentCamera
+	return camera and camera.ViewportSize or Vector2.new(1280, 720)
+end
+
+local function getInset()
+	return GuiService:GetGuiInset()
+end
+
+local function addCorner(parent, radius)
+	return create("UICorner", {
+		CornerRadius = UDim.new(0, radius or 14),
+		Parent = parent,
+	})
+end
+
+local function addStroke(parent, color, transparency, thickness)
+	return create("UIStroke", {
+		Color = color or Color3.new(1, 1, 1),
+		Transparency = transparency or 0.75,
+		Thickness = thickness or 1,
+		Parent = parent,
+	})
+end
+
+local function addGradient(parent, c1, c2, rotation)
+	return create("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, c1),
+			ColorSequenceKeypoint.new(1, c2),
+		}),
+		Rotation = rotation or 45,
+		Parent = parent,
+	})
+end
+
+local function ripple(parent, inputPos)
+	if not parent or not parent:IsA("GuiObject") then
+		return
+	end
+
+	local mouse = inputPos or UserInputService:GetMouseLocation()
+	local localPos = mouse - parent.AbsolutePosition
+
+	local circle = create("Frame", {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BackgroundTransparency = 0.55,
+		BorderSizePixel = 0,
+		Size = UDim2.fromOffset(0, 0),
+		Position = UDim2.fromOffset(localPos.X, localPos.Y),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		ZIndex = parent.ZIndex + 20,
+		ClipsDescendants = true,
+		Parent = parent,
+	})
+	addCorner(circle, 999)
+
+	local size = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 1.8
+	tween(circle, {
+		Size = UDim2.fromOffset(size, size),
+		BackgroundTransparency = 1,
+	}, 0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+	task.delay(0.55, function()
+		if circle then
+			circle:Destroy()
+		end
+	end)
+end
+
+local function clampPosition(x, y, w, h, margin)
+	local topLeft, bottomRight = getInset()
+	local viewport = getViewport()
+	margin = margin or 10
+
+	local minX = margin
+	local minY = topLeft.Y + margin
+	local maxX = math.max(minX, viewport.X - w - margin)
+	local maxY = math.max(minY, viewport.Y - bottomRight.Y - h - margin)
+
+	return math.clamp(x, minX, maxX), math.clamp(y, minY, maxY)
+end
+
+local function bindColor(bindings, obj, prop, theme, key)
+	table.insert(bindings, {
+		Object = obj,
+		Property = prop,
+		Key = key,
+	})
+	obj[prop] = theme[key]
+end
+
+--// Main
+function Nexora:CreateWindow(settings)
+	settings = settings or {}
+	local themeName = settings.Theme or "Nova"
+	local theme = Themes[themeName] or Themes.Nova
+
+	local screenGui = create("ScreenGui", {
+		Name = settings.Name or "Nexora",
+		IgnoreGuiInset = true,
+		ResetOnSpawn = false,
+		ClipToDeviceSafeArea = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Global,
+		DisplayOrder = settings.DisplayOrder or DEFAULT_DISPLAY_ORDER,
+		Parent = PlayerGui,
+	})
+
+	local uiScale = create("UIScale", {
+		Scale = isMobile() and 0.93 or 1,
+		Parent = screenGui,
+	})
+
+	local bindings = {}
+	local connections = {}
+	local pages = {}
+	local activePage = nil
+	local activeTabButton = nil
+	local opened = true
+
+	local main
+	local orb
+	local sidebar
+	local pagesRoot
+	local titleLabel
+	local subtitleLabel
+	local topbarLine
+	local mainStroke
+	local shadow
+	local orbGlow
+	local currentMainSize = nil
+
+	local function connect(signal, fn)
+		local c = signal:Connect(fn)
+		table.insert(connections, c)
+		return c
+	end
+
+	local function applyTheme(newThemeName)
+		local newTheme = Themes[newThemeName]
+		if not newTheme then
+			return
+		end
+
+		themeName = newThemeName
+		theme = newTheme
+
+		for _, item in ipairs(bindings) do
+			if item.Object and item.Object.Parent then
+				tween(item.Object, {
+					[item.Property] = newTheme[item.Key],
+				}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			end
+		end
+	end
+
+	local function refreshMobileScale()
+		uiScale.Scale = isMobile() and 0.93 or 1
+	end
+
+	local function layoutSizes()
+		local mobile = isMobile()
+		local topbarHeight = mobile and 56 or 60
+		local windowW = mobile and 0.94 or 0.72
+		local windowH = mobile and 0.86 or 0.78
+		local sidebarScale = mobile and 0.28 or 0.23
+		return topbarHeight, windowW, windowH, sidebarScale
+	end
+
+	local function setWindowVisible(visible)
+		opened = visible
+		if not main then
+			return
+		end
+
+		local mobile = isMobile()
+		local _, windowW, windowH = layoutSizes()
+		local targetSize = UDim2.fromScale(windowW, windowH)
+		local hiddenSize = UDim2.fromScale(mobile and 0.90 or 0.70, mobile and 0.82 or 0.74)
+
+		if visible then
+			main.Visible = true
+			main.BackgroundTransparency = 1
+			main.Size = hiddenSize
+			titleLabel.TextTransparency = 1
+			subtitleLabel.TextTransparency = 1
+			topbarLine.BackgroundTransparency = 1
+			shadow.ImageTransparency = 1
+			mainStroke.Transparency = 1
+
+			tween(main, { BackgroundTransparency = 0.12, Size = targetSize }, 0.34)
+			tween(titleLabel, { TextTransparency = 0 }, 0.25)
+			tween(subtitleLabel, { TextTransparency = 0 }, 0.25)
+			tween(topbarLine, { BackgroundTransparency = 0.65 }, 0.25)
+			tween(shadow, { ImageTransparency = 0.72 }, 0.3)
+			tween(mainStroke, { Transparency = 0.72 }, 0.3)
+		else
+			tween(main, { BackgroundTransparency = 1, Size = hiddenSize }, 0.25)
+			tween(titleLabel, { TextTransparency = 1 }, 0.18)
+			tween(subtitleLabel, { TextTransparency = 1 }, 0.18)
+			tween(topbarLine, { BackgroundTransparency = 1 }, 0.18)
+			tween(shadow, { ImageTransparency = 1 }, 0.22)
+			tween(mainStroke, { Transparency = 1 }, 0.18)
+
+			task.delay(0.25, function()
+				if not opened and main then
+					main.Visible = false
+				end
+			end)
+		end
+	end
+
+	--// Main container
+	local topbarHeight, windowW, windowH, sidebarScale = layoutSizes()
+	main = create("Frame", {
+		Name = "Main",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(windowW, windowH),
+		BackgroundColor3 = theme.Surface,
+		BackgroundTransparency = 0.12,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Active = true,
+		Visible = true,
+		ZIndex = 10,
+		Parent = screenGui,
+	})
+	addCorner(main, WINDOW_CORNER)
+	mainStroke = addStroke(main, theme.Stroke, 0.72, 1)
+	addGradient(main, theme.Surface, theme.Surface2, 90)
+
+	shadow = create("ImageLabel", {
+		Name = "Shadow",
+		BackgroundTransparency = 1,
+		Image = SHADOW_IMAGE,
+		ImageTransparency = 0.72,
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(49, 49, 450, 450),
+		Size = UDim2.new(1, 60, 1, 60),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		ZIndex = 1,
+		Parent = main,
+	})
+
+	local contentRoot = create("Frame", {
+		Name = "ContentRoot",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 1, 0),
+		ZIndex = 11,
+		Parent = main,
+	})
+
+	--// Topbar
+	topbarHeight = layoutSizes()
+	local topbar = create("Frame", {
+		Name = "Topbar",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, topbarHeight),
+		ZIndex = 20,
+		Parent = contentRoot,
+	})
+
+	topbarLine = create("Frame", {
+		Name = "Line",
+		BackgroundTransparency = 0.65,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, 1),
+		Position = UDim2.new(0, 0, 1, -1),
+		ZIndex = 21,
+		Parent = topbar,
+	})
+	bindColor(bindings, topbarLine, "BackgroundColor3", theme, "Accent")
+
+	titleLabel = create("TextLabel", {
+		Name = "Title",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 18, 0, 0),
+		Size = UDim2.new(1, -120, 1, 0),
+		Font = Enum.Font.GothamBold,
+		Text = settings.Title or "Nexora",
+		TextColor3 = theme.Text,
+		TextSize = isMobile() and 17 or 18,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 22,
+		Parent = topbar,
+	})
+
+	subtitleLabel = create("TextLabel", {
+		Name = "Subtitle",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 18, 0, 24),
+		Size = UDim2.new(1, -120, 0, 18),
+		Font = Enum.Font.Gotham,
+		Text = settings.Subtitle or "Purple-first adaptive UI",
+		TextColor3 = theme.SubText,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 22,
+		Parent = topbar,
+	})
+
+	--// Sidebar
+	sidebar = create("Frame", {
+		Name = "Sidebar",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 0, 0, topbarHeight),
+		Size = UDim2.new(sidebarScale, 0, 1, -topbarHeight),
+		ZIndex = 15,
+		Parent = contentRoot,
+	})
+
+	create("UIPadding", {
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12),
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		Parent = sidebar,
+	})
+
+	create("UIListLayout", {
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = sidebar,
+	})
+
+	pagesRoot = create("Frame", {
+		Name = "Pages",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Position = UDim2.new(sidebarScale, 0, 0, topbarHeight),
+		Size = UDim2.new(1 - sidebarScale, 0, 1, -topbarHeight),
+		ZIndex = 15,
+		Parent = contentRoot,
+	})
+
+	create("UIPadding", {
+		PaddingTop = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		Parent = pagesRoot,
+	})
+
+	--// Orb
+	orb = create("TextButton", {
+		Name = "Orb",
+		Size = UDim2.fromOffset(ORB_SIZE, ORB_SIZE),
+		Position = UDim2.fromOffset(getViewport().X - 92, getViewport().Y - 150),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = theme.Surface,
+		BackgroundTransparency = 0.05,
+		Text = "N",
+		Font = Enum.Font.GothamBold,
+		TextSize = 20,
+		TextColor3 = theme.Text,
+		AutoButtonColor = false,
+		BorderSizePixel = 0,
+		ZIndex = 10000,
+		Parent = screenGui,
+	})
+	addCorner(orb, 999)
+	addStroke(orb, theme.Stroke, 0.35, 1.5)
+
+	orbGlow = create("ImageLabel", {
+		Name = "Glow",
+		BackgroundTransparency = 1,
+		Image = GLOW_IMAGE,
+		ImageColor3 = theme.Glow,
+		ImageTransparency = 0.42,
+		Size = UDim2.new(1, 30, 1, 30),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		ZIndex = 9999,
+		Parent = orb,
+	})
+	addGradient(orb, theme.Accent, theme.Accent2, 40)
+
+	--// Orb pulse
+	task.spawn(function()
+		while screenGui.Parent do
+			tween(orbGlow, { ImageTransparency = 0.62, Size = UDim2.new(1, 40, 1, 40) }, 1.1)
+			task.wait(1.1)
+			if not orb or not orb.Parent then
+				break
+			end
+			tween(orbGlow, { ImageTransparency = 0.42, Size = UDim2.new(1, 30, 1, 30) }, 1.1)
+			task.wait(1.1)
+		end
+	end)
+
+	--// Orb drag and toggle
+	do
+		local draggingOrb = false
+		local orbInput = nil
+		local orbStart = nil
+		local orbStartPos = nil
+		local orbMoved = false
+
+		local function snapOrb()
+			if not orb or not orb.Parent then
+				return
+			end
+
+			local viewport = getViewport()
+			local topLeft, bottomRight = getInset()
+			local x = orb.Position.X.Offset
+			local y = orb.Position.Y.Offset
+			local snappedX = (orb.AbsolutePosition.X < viewport.X / 2) and 16 or (viewport.X - ORB_SIZE - 16)
+			local clampedY = math.clamp(y, topLeft.Y + 16, viewport.Y - bottomRight.Y - ORB_SIZE - 16)
+			tween(orb, { Position = UDim2.fromOffset(snappedX, clampedY) }, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		end
+
+		connect(orb.InputBegan, function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				draggingOrb = true
+				orbInput = input
+				orbStart = input.Position
+				orbStartPos = orb.Position
+				orbMoved = false
+			end
+		end)
+
+		connect(UserInputService.InputChanged, function(input)
+			if draggingOrb and orbInput == input then
+				local delta = input.Position - orbStart
+				if delta.Magnitude > 7 then
+					orbMoved = true
+				end
+
+				local newX = orbStartPos.X.Offset + delta.X
+				local newY = orbStartPos.Y.Offset + delta.Y
+				newX, newY = clampPosition(newX, newY, ORB_SIZE, ORB_SIZE, 16)
+				orb.Position = UDim2.fromOffset(newX, newY)
+			end
+		end)
+
+		connect(UserInputService.InputEnded, function(input)
+			if draggingOrb and orbInput == input then
+				draggingOrb = false
+				if orbMoved then
+					snapOrb()
+				else
+					setWindowVisible(not opened)
+				end
+			end
+		end)
+	end
+
+	--// Window drag
+	do
+		local dragging = false
+		local dragStart = nil
+		local startPos = nil
+
+		connect(topbar.InputBegan, function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = main.Position
+			end
+		end)
+
+		connect(UserInputService.InputChanged, function(input)
+			if dragging and dragStart and startPos then
+				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+					local delta = input.Position - dragStart
+					local targetX = startPos.X.Offset + delta.X
+					local targetY = startPos.Y.Offset + delta.Y
+					local w = main.AbsoluteSize.X
+					local h = main.AbsoluteSize.Y
+					targetX, targetY = clampPosition(targetX, targetY, w, h, 8)
+					main.Position = UDim2.fromOffset(targetX, targetY)
+				end
+			end
+		end)
+
+		connect(UserInputService.InputEnded, function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+				dragging = false
+			end
+		end)
+	end
+
+	--// Window API
+	local Window = {
+		ScreenGui = screenGui,
+		Main = main,
+		Themes = Themes,
+		CurrentTheme = themeName,
+		Open = function()
+			setWindowVisible(true)
+		end,
+		Close = function()
+			setWindowVisible(false)
+		end,
+		Toggle = function()
+			setWindowVisible(not opened)
+		end,
+	}
+
+	function Window:SetTheme(name)
+		if Themes[name] then
+			applyTheme(name)
+			self.CurrentTheme = name
+		end
+	end
+
+	function Window:Destroy()
+		for _, c in ipairs(connections) do
+			pcall(function()
+				c:Disconnect()
+			end)
+		end
+		if screenGui then
+			screenGui:Destroy()
+		end
+	end
+
+	function Window:Notify(data)
+		data = data or {}
+
+		local holder = screenGui:FindFirstChild("NotificationHolder")
+		if not holder then
+			holder = create("Frame", {
+				Name = "NotificationHolder",
+				AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.new(1, -16, 1, -16),
+				Size = UDim2.fromOffset(isMobile() and 280 or 340, 520),
+				BackgroundTransparency = 1,
+				ZIndex = 20000,
+				Parent = screenGui,
+			})
+
+			create("UIListLayout", {
+				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 10),
+				Parent = holder,
+			})
+		end
+
+		local note = create("Frame", {
+			Size = UDim2.new(1, 0, 0, 78),
+			BackgroundColor3 = theme.Surface,
+			BackgroundTransparency = 0.04,
+			BorderSizePixel = 0,
+			ZIndex = 20001,
+			Parent = holder,
+		})
+		addCorner(note, 16)
+		addStroke(note, theme.Stroke, 0.78, 1)
+
+		local nTitle = create("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 14, 0, 10),
+			Size = UDim2.new(1, -24, 0, 18),
+			Font = Enum.Font.GothamBold,
+			Text = data.Title or "Nexora",
+			TextColor3 = theme.Text,
+			TextSize = 15,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 20002,
+			Parent = note,
+		})
+
+		local nDesc = create("TextLabel", {
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 14, 0, 31),
+			Size = UDim2.new(1, -24, 0, 30),
+			Font = Enum.Font.Gotham,
+			Text = data.Description or "",
+			TextColor3 = theme.SubText,
+			TextSize = 13,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			ZIndex = 20002,
+			Parent = note,
+		})
+
+		local bar = create("Frame", {
+			BackgroundColor3 = theme.Accent,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 0, 3),
+			Position = UDim2.new(0, 0, 1, -3),
+			ZIndex = 20003,
+			Parent = note,
+		})
+
+		note.Position = UDim2.new(1, 120, 0, 0)
+		tween(note, { Position = UDim2.new(0, 0, 0, 0) }, 0.35)
+		tween(bar, { Size = UDim2.new(0, 0, 0, 3) }, data.Duration or 4, Enum.EasingStyle.Linear)
+
+		task.delay(data.Duration or 4, function()
+			if note and note.Parent then
+				tween(note, { BackgroundTransparency = 1 }, 0.25)
+				tween(nTitle, { TextTransparency = 1 }, 0.2)
+				tween(nDesc, { TextTransparency = 1 }, 0.2)
+				tween(bar, { BackgroundTransparency = 1 }, 0.2)
+				task.delay(0.25, function()
+					if note then
+						note:Destroy()
+					end
+				end)
+			end
+		end)
+	end
+
+	local function setActivePage(page, tabButton)
+		for btn, pg in pairs(pages) do
+			if pg then
+				pg.Visible = (pg == page)
+			end
+			if btn and btn.Parent then
+				if btn == tabButton then
+					tween(btn, {
+						BackgroundColor3 = theme.Accent,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+					}, 0.22)
+				else
+					tween(btn, {
+						BackgroundColor3 = theme.Surface2,
+						TextColor3 = theme.SubText,
+					}, 0.22)
+				end
+			end
+		end
+		activePage = page
+		activeTabButton = tabButton
+	end
+
+	local function buildSectionAPI(section, sectionTheme)
+		local Section = {}
+
+		function Section:CreateLabel(data)
+			if typeof(data) == "string" then
+				data = { Text = data }
+			end
+			data = data or {}
+
+			return create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				Font = Enum.Font.GothamMedium,
+				Text = data.Text or "Label",
+				TextColor3 = sectionTheme.SubText,
+				TextSize = 13,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 19,
+				Parent = section,
+			})
+		end
+
+		function Section:CreateParagraph(data)
+			if typeof(data) == "string" then
+				data = { Text = data }
+			end
+			data = data or {}
+
+			local box = create("Frame", {
+				BackgroundColor3 = sectionTheme.Surface,
+				BackgroundTransparency = 0.05,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				ZIndex = 19,
+				Parent = section,
+			})
+			addCorner(box, 12)
+			addStroke(box, sectionTheme.Stroke, 0.95, 1)
+
+			create("UIPadding", {
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+				Parent = box,
+			})
+
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				Font = Enum.Font.Gotham,
+				Text = data.Text or "Paragraph",
+				TextColor3 = sectionTheme.SubText,
+				TextSize = 13,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				ZIndex = 20,
+				Parent = box,
+			})
+
+			return box
+		end
+
+		function Section:CreateButton(data)
+			if typeof(data) == "string" then
+				data = { Name = data }
+			end
+			data = data or {}
+
+			local button = create("TextButton", {
+				Name = data.Name or "Button",
+				BackgroundColor3 = sectionTheme.Surface,
+				BackgroundTransparency = 0.02,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 0, isMobile() and 46 or 48),
+				AutoButtonColor = false,
+				Text = data.Name or "Button",
+				Font = Enum.Font.GothamSemibold,
+				TextColor3 = sectionTheme.Text,
+				TextSize = 14,
+				ZIndex = 20,
+				ClipsDescendants = true,
+				Parent = section,
+			})
+			addCorner(button, 14)
+			addStroke(button, sectionTheme.Stroke, 0.9, 1)
+
+			if data.Description then
+				create("TextLabel", {
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					Position = UDim2.new(0, 14, 0, 24),
+					Size = UDim2.new(1, -28, 0, 18),
+					Font = Enum.Font.Gotham,
+					Text = data.Description,
+					TextColor3 = sectionTheme.SubText,
+					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					ZIndex = 21,
+					Parent = button,
+				})
+			end
+
+			button.MouseButton1Click:Connect(function()
+				ripple(button)
+				tween(button, { Size = UDim2.new(1, 0, 0, isMobile() and 44 or 46) }, 0.08)
+				task.delay(0.08, function()
+					if button and button.Parent then
+						tween(button, { Size = UDim2.new(1, 0, 0, isMobile() and 46 or 48) }, 0.14)
+					end
+				end)
+				if data.Callback then
+					task.spawn(data.Callback)
+				end
+			end)
+
+			return button
+		end
+
+		function Section:CreateToggle(data)
+			if typeof(data) == "string" then
+				data = { Name = data }
+			end
+			data = data or {}
+
+			local enabled = data.Default or false
+
+			local holder = create("Frame", {
+				Name = data.Name or "Toggle",
+				BackgroundColor3 = sectionTheme.Surface,
+				BackgroundTransparency = 0.03,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 0, 54),
+				ZIndex = 20,
+				Parent = section,
+			})
+			addCorner(holder, 14)
+			addStroke(holder, sectionTheme.Stroke, 0.93, 1)
+
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Position = UDim2.new(0, 14, 0, 0),
+				Size = UDim2.new(1, -100, 1, 0),
+				Font = Enum.Font.GothamSemibold,
+				Text = data.Name or "Toggle",
+				TextColor3 = sectionTheme.Text,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 21,
+				Parent = holder,
+			})
+
+			if data.Description then
+				create("TextLabel", {
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					Position = UDim2.new(0, 14, 0, 24),
+					Size = UDim2.new(1, -100, 0, 18),
+					Font = Enum.Font.Gotham,
+					Text = data.Description,
+					TextColor3 = sectionTheme.SubText,
+					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					ZIndex = 21,
+					Parent = holder,
+				})
+			end
+
+			local track = create("Frame", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -14, 0.5, 0),
+				Size = UDim2.fromOffset(52, 28),
+				BackgroundColor3 = sectionTheme.Surface2,
+				BorderSizePixel = 0,
+				ZIndex = 21,
+				Parent = holder,
+			})
+			addCorner(track, 999)
+			addStroke(track, sectionTheme.Stroke, 0.96, 1)
+
+			local knob = create("Frame", {
+				Size = UDim2.fromOffset(22, 22),
+				Position = UDim2.new(0, 3, 0.5, -11),
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				ZIndex = 22,
+				Parent = track,
+			})
+			addCorner(knob, 999)
+
+			local function refresh(noCallback)
+				if enabled then
+					tween(track, { BackgroundColor3 = sectionTheme.Accent }, 0.2)
+					tween(knob, { Position = UDim2.new(1, -25, 0.5, -11) }, 0.22)
+				else
+					tween(track, { BackgroundColor3 = sectionTheme.Surface2 }, 0.2)
+					tween(knob, { Position = UDim2.new(0, 3, 0.5, -11) }, 0.22)
+				end
+
+				if data.Callback and not noCallback then
+					task.spawn(data.Callback, enabled)
+				end
+			end
+
+			holder.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					enabled = not enabled
+					refresh(false)
+				end
+			end)
+
+			refresh(true)
+			return {
+				Set = function(v)
+					enabled = not not v
+					refresh(false)
+				end,
+				Get = function()
+					return enabled
+				end,
+			}
+		end
+
+		function Section:CreateSlider(data)
+			if typeof(data) == "string" then
+				data = { Name = data }
+			end
+			data = data or {}
+
+			local min = data.Min or 0
+			local max = data.Max or 100
+			local value = data.Default or min
+
+			local holder = create("Frame", {
+				BackgroundColor3 = sectionTheme.Surface,
+				BackgroundTransparency = 0.03,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 0, 72),
+				ZIndex = 20,
+				Parent = section,
+			})
+			addCorner(holder, 14)
+			addStroke(holder, sectionTheme.Stroke, 0.93, 1)
+
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Position = UDim2.new(0, 14, 0, 0),
+				Size = UDim2.new(1, -28, 0, 20),
+				Font = Enum.Font.GothamSemibold,
+				Text = data.Name or "Slider",
+				TextColor3 = sectionTheme.Text,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 21,
+				Parent = holder,
+			})
+
+			local valueText = create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -14, 0, 0),
+				Size = UDim2.new(0, 100, 0, 20),
+				Font = Enum.Font.Gotham,
+				Text = tostring(value),
+				TextColor3 = sectionTheme.SubText,
+				TextSize = 12,
+				TextXAlignment = Enum.TextXAlignment.Right,
+				ZIndex = 21,
+				Parent = holder,
+			})
+
+			local bar = create("Frame", {
+				BackgroundColor3 = sectionTheme.Surface2,
+				BorderSizePixel = 0,
+				Position = UDim2.new(0, 14, 0, 40),
+				Size = UDim2.new(1, -28, 0, 12),
+				ZIndex = 21,
+				Parent = holder,
+			})
+			addCorner(bar, 999)
+			addStroke(bar, sectionTheme.Stroke, 0.96, 1)
+
+			local fill = create("Frame", {
+				BackgroundColor3 = sectionTheme.Accent,
+				BorderSizePixel = 0,
+				Size = UDim2.fromScale(0, 1),
+				ZIndex = 22,
+				Parent = bar,
+			})
+			addCorner(fill, 999)
+
+			local knob = create("Frame", {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0, 0.5),
+				Size = UDim2.fromOffset(18, 18),
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				ZIndex = 23,
+				Parent = bar,
+			})
+			addCorner(knob, 999)
+
+			local dragging = false
+
+			local function setValue(v, silent)
+				v = math.clamp(v, min, max)
+				value = math.floor(v * 100) / 100
+				local alpha = (value - min) / math.max(max - min, 0.0001)
+				fill.Size = UDim2.new(alpha, 0, 1, 0)
+				knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+				valueText.Text = tostring(value)
+
+				if data.Callback and not silent then
+					task.spawn(data.Callback, value)
+				end
+			end
+
+			local function setFromInput(input)
+				local x = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+				setValue(min + ((max - min) * x))
+			end
+
+			bar.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = true
+					setFromInput(input)
+				end
+			end)
+
+			connect(UserInputService.InputChanged, function(input)
+				if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					setFromInput(input)
+				end
+			end)
+
+			connect(UserInputService.InputEnded, function(input)
+				if dragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+					dragging = false
+				end
+			end)
+
+			setValue(value, true)
+			return {
+				Set = function(v)
+					setValue(v, false)
+				end,
+				Get = function()
+					return value
+				end,
+			}
+		end
+
+		function Section:CreateDropdown(data)
+			if typeof(data) == "string" then
+				data = { Name = data }
+			end
+			data = data or {}
+
+			local options = data.Options or {}
+			local selected = data.Default or options[1] or "None"
+			local open = false
+
+			local holder = create("Frame", {
+				BackgroundColor3 = sectionTheme.Surface,
+				BackgroundTransparency = 0.03,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 48),
+				ZIndex = 20,
+				Parent = section,
+			})
+			addCorner(holder, 14)
+			addStroke(holder, sectionTheme.Stroke, 0.93, 1)
+
+			local button = create("TextButton", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 0, 48),
+				Text = "",
+				AutoButtonColor = false,
+				ZIndex = 21,
+				Parent = holder,
+			})
+
+			local label = create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Position = UDim2.new(0, 14, 0, 0),
+				Size = UDim2.new(1, -28, 1, 0),
+				Font = Enum.Font.GothamSemibold,
+				Text = (data.Name or "Dropdown") .. "  •  " .. tostring(selected),
+				TextColor3 = sectionTheme.Text,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 22,
+				Parent = holder,
+			})
+
+			local list = create("Frame", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Visible = false,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				ZIndex = 22,
+				Parent = holder,
+			})
+
+			create("UIListLayout", {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 8),
+				Parent = list,
+			})
+
+			create("UIPadding", {
+				PaddingTop = UDim.new(0, 8),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+				PaddingBottom = UDim.new(0, 12),
+				Parent = list,
+			})
+
+			local function refreshText()
+				label.Text = (data.Name or "Dropdown") .. "  •  " .. tostring(selected)
+			end
+
+			for _, opt in ipairs(options) do
+				local optButton = create("TextButton", {
+					Size = UDim2.new(1, 0, 0, 40),
+					BackgroundColor3 = sectionTheme.Surface2,
+					BackgroundTransparency = 0.03,
+					BorderSizePixel = 0,
+					AutoButtonColor = false,
+					Text = tostring(opt),
+					Font = Enum.Font.GothamMedium,
+					TextSize = 13,
+					TextColor3 = sectionTheme.SubText,
+					ZIndex = 23,
+					Parent = list,
+				})
+				addCorner(optButton, 12)
+				addStroke(optButton, sectionTheme.Stroke, 0.96, 1)
+
+				optButton.MouseButton1Click:Connect(function()
+					selected = opt
+					refreshText()
+					open = false
+					list.Visible = false
+					holder.Size = UDim2.new(1, 0, 0, 48)
+					if data.Callback then
+						task.spawn(data.Callback, selected)
+					end
+				end)
+			end
+
+			button.MouseButton1Click:Connect(function()
+				ripple(holder)
+				open = not open
+				list.Visible = open
+				holder.Size = UDim2.new(1, 0, 0, open and (48 + (math.min(#options, 5) * 48)) or 48)
+			end)
+
+			refreshText()
+			return {
+				Set = function(v)
+					selected = v
+					refreshText()
+				end,
+				Get = function()
+					return selected
+				end,
+			}
+		end
+
+		return Section
+	end
+
+	function Window:CreateTab(tabData)
+		if typeof(tabData) == "string" then
+			tabData = { Name = tabData }
+		end
+		tabData = tabData or {}
+
+		local mobile = isMobile()
+		local topbarHeightNow, _, _, sidebarScaleNow = layoutSizes()
+
+		local tabButton = create("TextButton", {
+			Name = tabData.Name or "Tab",
+			Size = UDim2.new(1, 0, 0, mobile and 42 or 44),
+			BackgroundColor3 = theme.Surface2,
+			BackgroundTransparency = 0.03,
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Text = tabData.Name or "Tab",
+			Font = Enum.Font.GothamSemibold,
+			TextSize = 14,
+			TextColor3 = theme.SubText,
+			ZIndex = 30,
+			Parent = sidebar,
+		})
+		addCorner(tabButton, 14)
+		addStroke(tabButton, theme.Stroke, 0.92, 1)
+
+		local page = create("ScrollingFrame", {
+			Name = tabData.Name or "Page",
+			Visible = false,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 1, 0),
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollBarThickness = 0,
+			ScrollBarImageTransparency = 1,
+			ZIndex = 16,
+			Parent = pagesRoot,
+		})
+
+		create("UIListLayout", {
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 12),
+			Parent = page,
+		})
+
+		create("UIPadding", {
+			PaddingTop = UDim.new(0, 2),
+			PaddingBottom = UDim.new(0, 8),
+			PaddingLeft = UDim.new(0, 2),
+			PaddingRight = UDim.new(0, 2),
+			Parent = page,
+		})
+
+		pages[tabButton] = page
+
+		local function selectTab()
+			for btn, pg in pairs(pages) do
+				if pg then
+					pg.Visible = (pg == page)
+				end
+				if btn and btn.Parent then
+					if btn == tabButton then
+						tween(btn, { BackgroundColor3 = theme.Accent, TextColor3 = Color3.fromRGB(255, 255, 255) }, 0.22)
+					else
+						tween(btn, { BackgroundColor3 = theme.Surface2, TextColor3 = theme.SubText }, 0.22)
+					end
+				end
+			end
+			activePage = page
+			activeTabButton = tabButton
+		end
+
+		tabButton.MouseButton1Click:Connect(function()
+			ripple(tabButton)
+			selectTab()
+		end)
+
+		if not activePage then
+			selectTab()
+		end
+
+		local Tab = {}
+
+		function Tab:CreateSection(sectionData)
+			if typeof(sectionData) == "string" then
+				sectionData = { Name = sectionData }
+			end
+			sectionData = sectionData or {}
+
+			local section = create("Frame", {
+				Name = sectionData.Name or "Section",
+				BackgroundColor3 = theme.Surface2,
+				BackgroundTransparency = 0.05,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				ZIndex = 17,
+				Parent = page,
+			})
+			addCorner(section, 16)
+			addStroke(section, theme.Stroke, 0.9, 1)
+
+			create("UIPadding", {
+				PaddingTop = UDim.new(0, 14),
+				PaddingBottom = UDim.new(0, 14),
+				PaddingLeft = UDim.new(0, 14),
+				PaddingRight = UDim.new(0, 14),
+				Parent = section,
+			})
+
+			create("UIListLayout", {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 10),
+				Parent = section,
+			})
+
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 0),
+				Font = Enum.Font.GothamBold,
+				Text = sectionData.Name or "Section",
+				TextColor3 = theme.Text,
+				TextSize = 16,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 18,
+				Parent = section,
+			})
+
+			if sectionData.Description then
+				create("TextLabel", {
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Size = UDim2.new(1, 0, 0, 0),
+					Font = Enum.Font.Gotham,
+					Text = sectionData.Description,
+					TextColor3 = theme.SubText,
+					TextSize = 12,
+					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					ZIndex = 18,
+					Parent = section,
+				})
+			end
+
+			return buildSectionAPI(section, theme)
+		end
+
+		return Tab
+	end
+
+	--// Stabilize on resize / rotation
+	connect(RunService.RenderStepped, function()
+		refreshMobileScale()
+		if not main or not main.Parent then
+			return
+		end
+		if orb and orb.Parent then
+			local viewport = getViewport()
+			local pos = orb.Position
+			local x = pos.X.Offset
+			local y = pos.Y.Offset
+			x, y = clampPosition(x, y, ORB_SIZE, ORB_SIZE, 16)
+			if x ~= pos.X.Offset or y ~= pos.Y.Offset then
+				orb.Position = UDim2.fromOffset(x, y)
+			end
+		end
+	end)
+
+	--// Expose API
+	local public = Window
+
+	public:Notify({
+		Title = settings.Title or "Nexora",
+		Description = "Purple adaptive UI loaded successfully.",
+		Duration = 4,
+	})
+
+	return public
+end
+
+return Nexora
+
+--[[
+Example usage:
+
+local Nexora = loadstring(game:HttpGet("YOUR_RAW_URL_HERE"))()
+
+local Window = Nexora:CreateWindow({
+	Title = "Nexora",
+	Subtitle = "Purple edition",
+	Theme = "Nova",
+})
+
+local Main = Window:CreateTab("Main")
+local Combat = Main:CreateSection({ Name = "Combat", Description = "Core controls" })
+
+Combat:CreateButton({
+	Name = "Attack",
+	Callback = function()
+		print("Attack")
+	end,
+})
+
+Combat:CreateToggle({
+	Name = "Auto Farm",
+	Default = false,
+	Callback = function(v)
+		print("Auto Farm:", v)
+	end,
+})
+
+Combat:CreateSlider({
+	Name = "Speed",
+	Min = 16,
+	Max = 250,
+	Default = 16,
+	Callback = function(v)
+		print("Speed:", v)
+	end,
+})
+
+Combat:CreateDropdown({
+	Name = "Mode",
+	Options = { "Silent", "Fast", "Smart" },
+	Default = "Smart",
+	Callback = function(v)
+		print(v)
+	end,
+})
+
+Window:Notify({
+	Title = "Ready",
+	Description = "Purple Nexora is live.",
+	Duration = 4,
+})
+]]
