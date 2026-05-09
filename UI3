@@ -1,7 +1,18 @@
 --// ======================================================================
 --// KILOMETRES UI X V4
---// PREMIUM MOBILE FRAMEWORK
---// BUILD: SETTINGS + HIDE SYSTEM
+--// FULL MOBILE + LANDSCAPE REBUILD
+--// ADDED:
+--// ✅ Hide / Show Orb
+--// ✅ Settings Panel
+--// ✅ Theme Switching
+--// ✅ Width / Height Adjust
+--// ✅ X / Y Offset Adjust
+--// ✅ Save Settings Forever (executor file API if available)
+--// ✅ Slider
+--// ✅ TextBox
+--// ✅ Key System (Base64 only)
+--// ✅ Better Tabs / Buttons / Toggles
+--// ✅ Portrait + Landscape Stable
 --// ======================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -9,85 +20,120 @@ local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
 --// ======================================================================
---// SAFE PARENT
+--// SMALL HELPERS
 --// ======================================================================
 
 local function SafeParent()
-
 	if gethui then
-		local ok,ui = pcall(gethui)
-
+		local ok, ui = pcall(gethui)
 		if ok and ui then
 			return ui
 		end
 	end
-
 	return PlayerGui or CoreGui
 end
 
---// ======================================================================
---// HELPERS
---// ======================================================================
-
-local function New(class,props)
-
+local function New(class, props)
 	local obj = Instance.new(class)
-
-	for i,v in pairs(props or {}) do
+	for i, v in pairs(props or {}) do
 		if i ~= "Parent" then
 			obj[i] = v
 		end
 	end
-
 	if props and props.Parent then
 		obj.Parent = props.Parent
 	end
-
 	return obj
 end
 
-local function Corner(obj,radius)
-
-	return New("UICorner",{
+local function Corner(obj, radius)
+	return New("UICorner", {
 		Parent = obj,
-		CornerRadius = UDim.new(0,radius or 14)
+		CornerRadius = UDim.new(0, radius or 14)
 	})
 end
 
-local function Stroke(obj,color)
-
-	return New("UIStroke",{
+local function Stroke(obj, color, thickness)
+	return New("UIStroke", {
 		Parent = obj,
 		Color = color,
-		Thickness = 1
+		Thickness = thickness or 1
 	})
 end
 
-local function Tween(obj,props,speed)
-
+local function Tween(obj, props, speed)
 	local tw = TweenService:Create(
 		obj,
-		TweenInfo.new(
-			speed or 0.2,
-			Enum.EasingStyle.Quint,
-			Enum.EasingDirection.Out
-		),
+		TweenInfo.new(speed or 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 		props
 	)
-
 	tw:Play()
-
 	return tw
 end
 
+local function Clamp(v, mn, mx)
+	return math.max(mn, math.min(mx, v))
+end
+
 local function IsPortrait()
-	return Camera.ViewportSize.Y > Camera.ViewportSize.X
+	local vp = Camera and Camera.ViewportSize or Vector2.new(1280, 720)
+	return vp.Y > vp.X
+end
+
+local function SafePCall(fn, ...)
+	local ok, res = pcall(fn, ...)
+	return ok, res
+end
+
+local function Base64LooksValid(str)
+	if type(str) ~= "string" or str == "" then
+		return false
+	end
+
+	local cleaned = str:gsub("%s+", "")
+	local ok, decoded = pcall(function()
+		return HttpService:Base64Decode(cleaned)
+	end)
+	if not ok or type(decoded) ~= "string" then
+		return false
+	end
+
+	local re = HttpService:Base64Encode(decoded):gsub("%s+", "")
+	local a = cleaned:gsub("=+$", "")
+	local b = re:gsub("=+$", "")
+	return a == b
+end
+
+local function TryReadFile(path)
+	if type(isfile) == "function" and isfile(path) and type(readfile) == "function" then
+		local ok, data = pcall(readfile, path)
+		if ok then return data end
+	end
+	return nil
+end
+
+local function TryWriteFile(path, data)
+	if type(makefolder) == "function" then
+		local folder = path:match("^(.*)/[^/]+$")
+		if folder and folder ~= "" then
+			pcall(function()
+				if not isfolder(folder) then
+					makefolder(folder)
+				end
+			end)
+		end
+	end
+
+	if type(writefile) == "function" then
+		pcall(writefile, path, data)
+	end
 end
 
 --// ======================================================================
@@ -95,65 +141,69 @@ end
 --// ======================================================================
 
 local Themes = {
-
 	Default = {
-
-		Background = Color3.fromRGB(10,10,12),
-		Surface = Color3.fromRGB(17,17,23),
-		Surface2 = Color3.fromRGB(24,24,32),
-
-		Stroke = Color3.fromRGB(45,45,58),
-
-		Text = Color3.fromRGB(255,255,255),
-		TextDim = Color3.fromRGB(170,170,180),
-
-		Accent = Color3.fromRGB(130,110,255)
+		Background = Color3.fromRGB(10, 10, 12),
+		Surface = Color3.fromRGB(17, 17, 23),
+		Surface2 = Color3.fromRGB(24, 24, 32),
+		Stroke = Color3.fromRGB(45, 45, 58),
+		Text = Color3.fromRGB(255, 255, 255),
+		TextDim = Color3.fromRGB(170, 170, 180),
+		Accent = Color3.fromRGB(130, 110, 255),
+		Accent2 = Color3.fromRGB(92, 73, 212),
 	},
 
 	LiquidGlass = {
-
-		Background = Color3.fromRGB(18,18,24),
-		Surface = Color3.fromRGB(30,30,40),
-		Surface2 = Color3.fromRGB(45,45,60),
-
-		Stroke = Color3.fromRGB(90,90,110),
-
-		Text = Color3.fromRGB(255,255,255),
-		TextDim = Color3.fromRGB(190,190,210),
-
-		Accent = Color3.fromRGB(120,200,255)
+		Background = Color3.fromRGB(12, 16, 22),
+		Surface = Color3.fromRGB(24, 30, 42),
+		Surface2 = Color3.fromRGB(34, 42, 58),
+		Stroke = Color3.fromRGB(95, 120, 160),
+		Text = Color3.fromRGB(255, 255, 255),
+		TextDim = Color3.fromRGB(200, 215, 235),
+		Accent = Color3.fromRGB(100, 190, 255),
+		Accent2 = Color3.fromRGB(72, 128, 255),
 	},
 
 	CyberNeo = {
-
-		Background = Color3.fromRGB(5,5,8),
-		Surface = Color3.fromRGB(15,15,20),
-		Surface2 = Color3.fromRGB(20,20,28),
-
-		Stroke = Color3.fromRGB(0,255,255),
-
-		Text = Color3.fromRGB(255,255,255),
-		TextDim = Color3.fromRGB(120,220,255),
-
-		Accent = Color3.fromRGB(0,255,255)
+		Background = Color3.fromRGB(7, 10, 8),
+		Surface = Color3.fromRGB(13, 18, 14),
+		Surface2 = Color3.fromRGB(19, 28, 22),
+		Stroke = Color3.fromRGB(36, 72, 48),
+		Text = Color3.fromRGB(240, 255, 245),
+		TextDim = Color3.fromRGB(150, 190, 160),
+		Accent = Color3.fromRGB(0, 255, 145),
+		Accent2 = Color3.fromRGB(0, 170, 90),
 	},
 
-	Years3066 = {
+	Year3066 = {
+		Background = Color3.fromRGB(8, 8, 14),
+		Surface = Color3.fromRGB(18, 18, 31),
+		Surface2 = Color3.fromRGB(27, 28, 44),
+		Stroke = Color3.fromRGB(60, 62, 92),
+		Text = Color3.fromRGB(255, 255, 255),
+		TextDim = Color3.fromRGB(170, 175, 210),
+		Accent = Color3.fromRGB(255, 128, 64),
+		Accent2 = Color3.fromRGB(72, 194, 255),
+	},
 
-		Background = Color3.fromRGB(6,6,10),
-		Surface = Color3.fromRGB(18,18,28),
-		Surface2 = Color3.fromRGB(28,28,40),
-
-		Stroke = Color3.fromRGB(120,80,255),
-
-		Text = Color3.fromRGB(255,255,255),
-		TextDim = Color3.fromRGB(200,180,255),
-
-		Accent = Color3.fromRGB(140,80,255)
-	}
+	Midnight = {
+		Background = Color3.fromRGB(8, 9, 18),
+		Surface = Color3.fromRGB(16, 18, 30),
+		Surface2 = Color3.fromRGB(24, 26, 42),
+		Stroke = Color3.fromRGB(52, 56, 82),
+		Text = Color3.fromRGB(255, 255, 255),
+		TextDim = Color3.fromRGB(168, 172, 205),
+		Accent = Color3.fromRGB(163, 98, 255),
+		Accent2 = Color3.fromRGB(90, 150, 255),
+	},
 }
 
-local Theme = Themes.Default
+local ThemeNames = {
+	{Key = "Default", Label = "Default"},
+	{Key = "LiquidGlass", Label = "Liquid Glass"},
+	{Key = "CyberNeo", Label = "Cyber Neo"},
+	{Key = "Year3066", Label = "3066 Years"},
+	{Key = "Midnight", Label = "Midnight"},
+}
 
 --// ======================================================================
 --// LIBRARY
@@ -161,20 +211,93 @@ local Theme = Themes.Default
 
 local Library = {}
 
-function Library:SetTheme(name)
-
-	if Themes[name] then
-		Theme = Themes[name]
-	end
-end
-
 function Library:CreateWindow(cfg)
-
 	cfg = cfg or {}
 
-	--// SCREEN
+	local SaveFile = cfg.SaveFile or "KilometresUIX/settings.json"
 
-	local Screen = New("ScreenGui",{
+	local State = {
+		ThemeName = cfg.Theme or cfg.DefaultTheme or "Default",
+		Width = (cfg.Width or cfg.WindowWidth or 900),
+		Height = (cfg.Height or cfg.WindowHeight or 620),
+		OffsetX = (cfg.OffsetX or 0),
+		OffsetY = (cfg.OffsetY or 0),
+		SaveSettings = (cfg.SaveSettings ~= false),
+		KeySystem = (cfg.KeySystem == true),
+		RequiredKey = cfg.RequiredKey or cfg.Key or "",
+		Hidden = false,
+		CurrentTab = nil,
+		Ready = false,
+		Refreshers = {},
+	}
+
+	local function CurrentTheme()
+		return Themes[State.ThemeName] or Themes.Default
+	end
+
+	local function AddRefresher(fn)
+		table.insert(State.Refreshers, fn)
+	end
+
+	local function RefreshAll()
+		for _, fn in ipairs(State.Refreshers) do
+			pcall(fn)
+		end
+	end
+
+	local function Persist()
+		if not State.SaveSettings then
+			return
+		end
+
+		local payload = {
+			ThemeName = State.ThemeName,
+			Width = State.Width,
+			Height = State.Height,
+			OffsetX = State.OffsetX,
+			OffsetY = State.OffsetY,
+			SaveSettings = State.SaveSettings,
+			KeySystem = State.KeySystem,
+			RequiredKey = State.RequiredKey,
+		}
+
+		local encoded = HttpService:JSONEncode(payload)
+		TryWriteFile(SaveFile, encoded)
+	end
+
+	local function LoadPersisted()
+		if not State.SaveSettings then
+			return
+		end
+
+		local raw = TryReadFile(SaveFile)
+		if not raw then
+			return
+		end
+
+		local ok, decoded = pcall(function()
+			return HttpService:JSONDecode(raw)
+		end)
+
+		if ok and type(decoded) == "table" then
+			if type(decoded.ThemeName) == "string" and Themes[decoded.ThemeName] then
+				State.ThemeName = decoded.ThemeName
+			end
+			if type(decoded.Width) == "number" then State.Width = decoded.Width end
+			if type(decoded.Height) == "number" then State.Height = decoded.Height end
+			if type(decoded.OffsetX) == "number" then State.OffsetX = decoded.OffsetX end
+			if type(decoded.OffsetY) == "number" then State.OffsetY = decoded.OffsetY end
+			if type(decoded.SaveSettings) == "boolean" then State.SaveSettings = decoded.SaveSettings end
+			if type(decoded.KeySystem) == "boolean" then State.KeySystem = decoded.KeySystem end
+			if type(decoded.RequiredKey) == "string" then State.RequiredKey = decoded.RequiredKey end
+		end
+	end
+
+	LoadPersisted()
+	State.Width = Clamp(State.Width, 340, 1400)
+	State.Height = Clamp(State.Height, 260, 900)
+
+	local Screen = New("ScreenGui", {
 		Name = "KilometresUIX",
 		Parent = SafeParent(),
 		IgnoreGuiInset = true,
@@ -182,763 +305,1470 @@ function Library:CreateWindow(cfg)
 		ZIndexBehavior = Enum.ZIndexBehavior.Global
 	})
 
-	--// MAIN
-
-	local Main = New("Frame",{
+	--// KEY OVERLAY
+	local KeyOverlay = New("Frame", {
 		Parent = Screen,
+		Visible = State.KeySystem,
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.35,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 1000
+	})
 
-		AnchorPoint = Vector2.new(0.5,0.5),
-		Position = UDim2.fromScale(0.5,0.5),
-
-		Size = UDim2.fromOffset(900,620),
-
-		BackgroundColor3 = Theme.Background,
+	local KeyCard = New("Frame", {
+		Parent = KeyOverlay,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(320, 220),
+		BackgroundColor3 = Themes.Default.Surface,
 		BorderSizePixel = 0,
+		ZIndex = 1001
+	})
+	Corner(KeyCard, 18)
+	Stroke(KeyCard, Themes.Default.Stroke, 1)
 
+	local KeyTitle = New("TextLabel", {
+		Parent = KeyCard,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 12),
+		Size = UDim2.new(1, -32, 0, 24),
+		Font = Enum.Font.GothamBold,
+		Text = "Key System",
+		TextSize = 18,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Themes.Default.Text,
+		ZIndex = 1002
+	})
+
+	local KeyInfo = New("TextLabel", {
+		Parent = KeyCard,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 40),
+		Size = UDim2.new(1, -32, 0, 44),
+		Font = Enum.Font.Gotham,
+		Text = "Enter a valid Base64 key to unlock the UI.",
+		TextSize = 12,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		TextColor3 = Themes.Default.TextDim,
+		ZIndex = 1002
+	})
+
+	local KeyBox = New("TextBox", {
+		Parent = KeyCard,
+		Position = UDim2.fromOffset(16, 92),
+		Size = UDim2.new(1, -32, 0, 40),
+		BackgroundColor3 = Themes.Default.Surface2,
+		BorderSizePixel = 0,
+		ClearTextOnFocus = false,
+		Font = Enum.Font.GothamMedium,
+		PlaceholderText = "Base64 key",
+		Text = "",
+		TextSize = 14,
+		TextColor3 = Themes.Default.Text,
+		PlaceholderColor3 = Themes.Default.TextDim,
+		ZIndex = 1002
+	})
+	Corner(KeyBox, 12)
+	Stroke(KeyBox, Themes.Default.Stroke, 1)
+
+	local KeySubmit = New("TextButton", {
+		Parent = KeyCard,
+		Position = UDim2.fromOffset(16, 146),
+		Size = UDim2.new(1, -32, 0, 40),
+		BackgroundColor3 = Themes.Default.Accent,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+		Font = Enum.Font.GothamBold,
+		Text = "Unlock",
+		TextSize = 14,
+		TextColor3 = Color3.new(1, 1, 1),
+		ZIndex = 1002
+	})
+	Corner(KeySubmit, 12)
+
+	local KeyStatus = New("TextLabel", {
+		Parent = KeyCard,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(16, 188),
+		Size = UDim2.new(1, -32, 0, 18),
+		Font = Enum.Font.Gotham,
+		Text = "",
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Themes.Default.TextDim,
+		ZIndex = 1002
+	})
+
+	--// MAIN WINDOW
+	local Main = New("Frame", {
+		Parent = Screen,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, State.OffsetX, 0.5, State.OffsetY),
+		Size = UDim2.fromOffset(State.Width, State.Height),
+		BackgroundColor3 = CurrentTheme().Background,
+		BorderSizePixel = 0,
 		ZIndex = 1
 	})
+	Corner(Main, 20)
+	Stroke(Main, CurrentTheme().Stroke, 1)
 
-	Corner(Main,20)
-	Stroke(Main,Theme.Stroke)
-
-	--// SCALE
-
-	local Scale = New("UIScale",{
+	local Topbar = New("Frame", {
 		Parent = Main,
-		Scale = 1
+		Size = UDim2.new(1, 0, 0, 58),
+		BackgroundTransparency = 1,
+		ZIndex = 5
 	})
 
-	--// FLOATING BALL
-
-	local Orb = New("TextButton",{
-		Parent = Screen,
-
-		Visible = false,
-
-		AnchorPoint = Vector2.new(0.5,0.5),
-		Position = UDim2.new(0,120,0.5,0),
-
-		Size = UDim2.fromOffset(58,58),
-
-		BackgroundColor3 = Theme.Accent,
-		BorderSizePixel = 0,
-
-		Text = "◉",
-		TextColor3 = Color3.new(1,1,1),
-		TextSize = 22,
-
+	local Title = New("TextLabel", {
+		Parent = Topbar,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(18, 10),
+		Size = UDim2.new(1, -120, 0, 22),
+		Text = cfg.Title or "Kilometres UI X",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 18,
 		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 6
+	})
 
+	local Subtitle = New("TextLabel", {
+		Parent = Topbar,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(18, 32),
+		Size = UDim2.new(1, -120, 0, 16),
+		Text = cfg.Subtitle or "Framework",
+		TextColor3 = CurrentTheme().TextDim,
+		TextSize = 12,
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 6
+	})
+
+	local SettingsButton = New("TextButton", {
+		Parent = Topbar,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -52, 0, 13),
+		Size = UDim2.fromOffset(36, 32),
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		Text = "⚙",
+		TextSize = 16,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = CurrentTheme().Text,
+		AutoButtonColor = false,
+		ZIndex = 8
+	})
+	Corner(SettingsButton, 10)
+	Stroke(SettingsButton, CurrentTheme().Stroke, 1)
+
+	local HideButton = New("TextButton", {
+		Parent = Topbar,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -12, 0, 13),
+		Size = UDim2.fromOffset(36, 32),
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		Text = "–",
+		TextSize = 18,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = CurrentTheme().Text,
+		AutoButtonColor = false,
+		ZIndex = 8
+	})
+	Corner(HideButton, 10)
+	Stroke(HideButton, CurrentTheme().Stroke, 1)
+
+	local LandscapeNav = New("Frame", {
+		Parent = Main,
+		BackgroundColor3 = CurrentTheme().Surface,
+		BorderSizePixel = 0,
+		ZIndex = 20
+	})
+	Corner(LandscapeNav, 18)
+	Stroke(LandscapeNav, CurrentTheme().Stroke, 1)
+	New("UIPadding", {
+		Parent = LandscapeNav,
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12)
+	})
+	New("UIListLayout", {
+		Parent = LandscapeNav,
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local PortraitNav = New("Frame", {
+		Parent = Main,
+		BackgroundColor3 = CurrentTheme().Surface,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 20
+	})
+	Corner(PortraitNav, 18)
+	Stroke(PortraitNav, CurrentTheme().Stroke, 1)
+	New("UIPadding", {
+		Parent = PortraitNav,
+		PaddingLeft = UDim.new(0, 10),
+		PaddingRight = UDim.new(0, 10),
+		PaddingTop = UDim.new(0, 10),
+		PaddingBottom = UDim.new(0, 10)
+	})
+	New("UIListLayout", {
+		Parent = PortraitNav,
+		Padding = UDim.new(0, 8),
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local PageHolder = New("Frame", {
+		Parent = Main,
+		BackgroundTransparency = 1,
+		ZIndex = 30
+	})
+
+	local SettingsPanel = New("Frame", {
+		Parent = Main,
+		Visible = false,
+		BackgroundColor3 = CurrentTheme().Surface,
+		BorderSizePixel = 0,
+		ZIndex = 60
+	})
+	Corner(SettingsPanel, 18)
+	Stroke(SettingsPanel, CurrentTheme().Stroke, 1)
+
+	local SettingsHeader = New("Frame", {
+		Parent = SettingsPanel,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 48),
+		ZIndex = 61
+	})
+
+	local SettingsTitle = New("TextLabel", {
+		Parent = SettingsHeader,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(14, 10),
+		Size = UDim2.new(1, -70, 0, 20),
+		Text = "Settings",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 16,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 62
+	})
+
+	local SettingsClose = New("TextButton", {
+		Parent = SettingsHeader,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -12, 0, 9),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		Text = "×",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 16,
+		Font = Enum.Font.GothamBold,
+		AutoButtonColor = false,
+		ZIndex = 62
+	})
+	Corner(SettingsClose, 10)
+	Stroke(SettingsClose, CurrentTheme().Stroke, 1)
+
+	local SettingsBody = New("ScrollingFrame", {
+		Parent = SettingsPanel,
+		Position = UDim2.fromOffset(0, 48),
+		Size = UDim2.new(1, 0, 1, -48),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.fromOffset(0, 0),
+		ZIndex = 61
+	})
+	New("UIPadding", {
+		Parent = SettingsBody,
+		PaddingTop = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12)
+	})
+	local SettingsList = New("UIListLayout", {
+		Parent = SettingsBody,
+		Padding = UDim.new(0, 12),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local ThemeSection = New("Frame", {
+		Parent = SettingsBody,
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(1, 0, 0, 0),
+		ZIndex = 62
+	})
+	Corner(ThemeSection, 14)
+	Stroke(ThemeSection, CurrentTheme().Stroke, 1)
+	New("UIPadding", {
+		Parent = ThemeSection,
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12)
+	})
+	New("UIListLayout", {
+		Parent = ThemeSection,
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local ThemeHeader = New("TextLabel", {
+		Parent = ThemeSection,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 18),
+		Text = "Appearance",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 63
+	})
+
+	local ThemeGridWrap = New("Frame", {
+		Parent = ThemeSection,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 110),
+		ZIndex = 63
+	})
+
+	local ThemeGrid = New("UIGridLayout", {
+		Parent = ThemeGridWrap,
+		CellSize = UDim2.new(0.5, -6, 0, 34),
+		CellPadding = UDim2.fromOffset(12, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local LayoutSection = New("Frame", {
+		Parent = SettingsBody,
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(1, 0, 0, 0),
+		ZIndex = 62
+	})
+	Corner(LayoutSection, 14)
+	Stroke(LayoutSection, CurrentTheme().Stroke, 1)
+	New("UIPadding", {
+		Parent = LayoutSection,
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12)
+	})
+	New("UIListLayout", {
+		Parent = LayoutSection,
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local LayoutHeader = New("TextLabel", {
+		Parent = LayoutSection,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 18),
+		Text = "Layout",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 63
+	})
+
+	local MiscSection = New("Frame", {
+		Parent = SettingsBody,
+		BackgroundColor3 = CurrentTheme().Surface2,
+		BorderSizePixel = 0,
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Size = UDim2.new(1, 0, 0, 0),
+		ZIndex = 62
+	})
+	Corner(MiscSection, 14)
+	Stroke(MiscSection, CurrentTheme().Stroke, 1)
+	New("UIPadding", {
+		Parent = MiscSection,
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12)
+	})
+	New("UIListLayout", {
+		Parent = MiscSection,
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+
+	local MiscHeader = New("TextLabel", {
+		Parent = MiscSection,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 18),
+		Text = "Options",
+		TextColor3 = CurrentTheme().Text,
+		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 63
+	})
+
+	--// ORB
+	local Orb = New("TextButton", {
+		Parent = Screen,
+		Visible = false,
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -18, 1, -18),
+		Size = UDim2.fromOffset(54, 54),
+		BackgroundColor3 = CurrentTheme().Accent,
+		BorderSizePixel = 0,
+		Text = "UI",
+		TextColor3 = Color3.new(1, 1, 1),
+		TextSize = 14,
+		Font = Enum.Font.GothamBold,
+		AutoButtonColor = false,
 		ZIndex = 999
 	})
+	Corner(Orb, 999)
+	Stroke(Orb, Color3.new(1, 1, 1), 0)
 
-	Corner(Orb,999)
+	local OrbShadow = New("Frame", {
+		Parent = Orb,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 998
+	})
 
 	--// DRAG ORB
-
 	do
 		local dragging = false
-		local dragStart
-		local startPos
+		local dragInput, dragStart, startPos
 
 		Orb.InputBegan:Connect(function(input)
-
-			if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
-
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				dragging = true
 				dragStart = input.Position
 				startPos = Orb.Position
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
+			end
+		end)
+
+		Orb.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				dragInput = input
 			end
 		end)
 
 		UIS.InputChanged:Connect(function(input)
-
-			if dragging and (
-				input.UserInputType == Enum.UserInputType.MouseMovement
-				or input.UserInputType == Enum.UserInputType.Touch
-			) then
-
+			if input == dragInput and dragging and startPos then
 				local delta = input.Position - dragStart
-
 				Orb.Position = UDim2.new(
 					startPos.X.Scale,
 					startPos.X.Offset + delta.X,
-
 					startPos.Y.Scale,
 					startPos.Y.Offset + delta.Y
 				)
 			end
 		end)
-
-		UIS.InputEnded:Connect(function(input)
-
-			if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
-
-				dragging = false
-			end
-		end)
 	end
 
-	--// RESTORE
+	--// LAYOUT / VISIBILITY
+	local function SetHidden(hidden)
+		State.Hidden = hidden and true or false
+		Main.Visible = not State.Hidden
+		SettingsPanel.Visible = (not State.Hidden) and SettingsPanel.Visible or false
+		Orb.Visible = State.Hidden
+	end
 
-	Orb.MouseButton1Click:Connect(function()
+	local function SetTheme(name)
+		if not Themes[name] then
+			name = "Default"
+		end
+		State.ThemeName = name
+		RefreshAll()
+		Persist()
+	end
 
-		Main.Visible = true
-		Orb.Visible = false
+	local function UpdateLayout()
+		local vp = Camera and Camera.ViewportSize or Vector2.new(1280, 720)
 
-		Tween(Main,{
-			Size = UDim2.fromOffset(900,620)
-		},0.2)
+		State.Width = Clamp(State.Width, 340, math.max(340, vp.X - 20))
+		State.Height = Clamp(State.Height, 260, math.max(260, vp.Y - 20))
+
+		Main.Size = UDim2.fromOffset(State.Width, State.Height)
+		Main.Position = UDim2.new(0.5, State.OffsetX, 0.5, State.OffsetY)
+
+		local portrait = IsPortrait()
+
+		if portrait then
+			LandscapeNav.Visible = false
+			PortraitNav.Visible = true
+
+			PortraitNav.Position = UDim2.new(0, 10, 0, 68)
+			PortraitNav.Size = UDim2.new(1, -20, 0, 54)
+
+			PageHolder.Position = UDim2.new(0, 10, 0, 132)
+			PageHolder.Size = UDim2.new(1, -20, 1, -142)
+
+			SettingsPanel.Position = UDim2.new(0, 10, 0, 132)
+			SettingsPanel.Size = UDim2.new(1, -20, 1, -142)
+		else
+			LandscapeNav.Visible = true
+			PortraitNav.Visible = false
+
+			LandscapeNav.Position = UDim2.new(0, 12, 0, 68)
+			LandscapeNav.Size = UDim2.new(0, 220, 1, -80)
+
+			PageHolder.Position = UDim2.new(0, 244, 0, 68)
+			PageHolder.Size = UDim2.new(1, -256, 1, -80)
+
+			SettingsPanel.Position = UDim2.new(0, 244, 0, 68)
+			SettingsPanel.Size = UDim2.new(1, -256, 1, -80)
+		end
+
+		if State.Hidden then
+			Main.Visible = false
+			SettingsPanel.Visible = false
+			Orb.Visible = true
+		end
+	end
+
+	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateLayout)
+
+	--// THEME REFRESH
+	AddRefresher(function()
+		local T = CurrentTheme()
+
+		Main.BackgroundColor3 = T.Background
+		Stroke(Main, T.Stroke, 1).Enabled = false
+
+		Topbar.BackgroundTransparency = 1
+		Title.TextColor3 = T.Text
+		Subtitle.TextColor3 = T.TextDim
+
+		SettingsButton.BackgroundColor3 = T.Surface2
+		SettingsButton.TextColor3 = T.Text
+		HideButton.BackgroundColor3 = T.Surface2
+		HideButton.TextColor3 = T.Text
+
+		SettingsPanel.BackgroundColor3 = T.Surface
+		SettingsTitle.TextColor3 = T.Text
+		SettingsClose.BackgroundColor3 = T.Surface2
+		SettingsClose.TextColor3 = T.Text
+
+		ThemeSection.BackgroundColor3 = T.Surface2
+		LayoutSection.BackgroundColor3 = T.Surface2
+		MiscSection.BackgroundColor3 = T.Surface2
+
+		ThemeHeader.TextColor3 = T.Text
+		LayoutHeader.TextColor3 = T.Text
+		MiscHeader.TextColor3 = T.Text
+
+		for _, child in ipairs({LandscapeNav, PortraitNav}) do
+			child.BackgroundColor3 = T.Surface
+		end
+
+		Orb.BackgroundColor3 = T.Accent
+		Orb.TextColor3 = Color3.new(1, 1, 1)
+
+		KeyCard.BackgroundColor3 = T.Surface
+		KeyTitle.TextColor3 = T.Text
+		KeyInfo.TextColor3 = T.TextDim
+		KeyBox.BackgroundColor3 = T.Surface2
+		KeyBox.TextColor3 = T.Text
+		KeyBox.PlaceholderColor3 = T.TextDim
+		KeySubmit.BackgroundColor3 = T.Accent
+		KeyStatus.TextColor3 = T.TextDim
+
+		for _, obj in ipairs(State.Refreshers) do
+			-- refreshed by callbacks below
+		end
 	end)
 
-	--// TOPBAR
+	--// TOP BUTTONS ACTIONS
+	local function ToggleSettings()
+		if State.Hidden then
+			return
+		end
+		SettingsPanel.Visible = not SettingsPanel.Visible
+	end
 
-	local Topbar = New("Frame",{
-		Parent = Main,
+	SettingsButton.MouseButton1Click:Connect(ToggleSettings)
+	SettingsClose.MouseButton1Click:Connect(function()
+		SettingsPanel.Visible = false
+	end)
 
-		Size = UDim2.new(1,0,0,58),
+	HideButton.MouseButton1Click:Connect(function()
+		SetHidden(true)
+	end)
 
-		BackgroundTransparency = 1,
-		ZIndex = 5
-	})
+	Orb.MouseButton1Click:Connect(function()
+		SetHidden(false)
+	end)
 
-	New("TextLabel",{
-		Parent = Topbar,
+	--// KEY SYSTEM
+	local function UnlockUI()
+		KeyOverlay.Visible = false
+		Main.Visible = true
+		UpdateLayout()
+	end
 
-		BackgroundTransparency = 1,
+	local function TryUnlockWithKey(rawKey)
+		rawKey = tostring(rawKey or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if not Base64LooksValid(rawKey) then
+			KeyStatus.Text = "Invalid Base64."
+			KeyStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
+			return false
+		end
 
-		Position = UDim2.fromOffset(18,10),
-		Size = UDim2.new(1,-120,0,22),
+		if State.RequiredKey ~= "" then
+			if rawKey ~= State.RequiredKey then
+				KeyStatus.Text = "Wrong key."
+				KeyStatus.TextColor3 = Color3.fromRGB(255, 120, 120)
+				return false
+			end
+		end
 
-		Text = cfg.Title or "Kilometres UI X",
-		TextColor3 = Theme.Text,
-		TextSize = 18,
+		KeyStatus.Text = "Accepted."
+		KeyStatus.TextColor3 = Color3.fromRGB(120, 255, 160)
+		task.wait(0.12)
+		UnlockUI()
+		return true
+	end
 
-		Font = Enum.Font.GothamBold,
-		TextXAlignment = Enum.TextXAlignment.Left,
+	KeySubmit.MouseButton1Click:Connect(function()
+		TryUnlockWithKey(KeyBox.Text)
+	end)
 
-		ZIndex = 6
-	})
+	KeyBox.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			TryUnlockWithKey(KeyBox.Text)
+		end
+	end)
 
-	New("TextLabel",{
-		Parent = Topbar,
+	if not State.KeySystem then
+		KeyOverlay.Visible = false
+		Main.Visible = true
+	else
+		Main.Visible = false
+		KeyOverlay.Visible = true
+	end
 
-		BackgroundTransparency = 1,
-
-		Position = UDim2.fromOffset(18,32),
-		Size = UDim2.new(1,-120,0,16),
-
-		Text = cfg.Subtitle or "Premium Framework",
-		TextColor3 = Theme.TextDim,
-		TextSize = 12,
-
-		Font = Enum.Font.Gotham,
-		TextXAlignment = Enum.TextXAlignment.Left,
-
-		ZIndex = 6
-	})
-
-	--// HIDE BUTTON
-
-	local HideButton = New("TextButton",{
-		Parent = Topbar,
-
-		AnchorPoint = Vector2.new(1,0),
-		Position = UDim2.new(1,-18,0,12),
-
-		Size = UDim2.fromOffset(34,34),
-
-		BackgroundColor3 = Theme.Surface2,
-		BorderSizePixel = 0,
-
-		Text = "—",
-		TextSize = 18,
-		TextColor3 = Theme.Text,
-
-		Font = Enum.Font.GothamBold,
-
-		ZIndex = 10
-	})
-
-	Corner(HideButton,12)
-	Stroke(HideButton,Theme.Stroke)
-
-	--// SETTINGS BUTTON
-
-	local SettingsButton = New("TextButton",{
-		Parent = Topbar,
-
-		AnchorPoint = Vector2.new(1,0),
-		Position = UDim2.new(1,-58,0,12),
-
-		Size = UDim2.fromOffset(34,34),
-
-		BackgroundColor3 = Theme.Surface2,
-		BorderSizePixel = 0,
-
-		Text = "⚙",
-		TextSize = 16,
-		TextColor3 = Theme.Text,
-
-		Font = Enum.Font.GothamBold,
-
-		ZIndex = 10
-	})
-
-	Corner(SettingsButton,12)
-	Stroke(SettingsButton,Theme.Stroke)
-
-	--// SETTINGS PANEL
-
-	local SettingsPanel = New("Frame",{
-		Parent = Main,
-
-		Visible = false,
-
-		AnchorPoint = Vector2.new(1,0),
-		Position = UDim2.new(1,-10,0,68),
-
-		Size = UDim2.fromOffset(240,420),
-
-		BackgroundColor3 = Theme.Surface,
-		BorderSizePixel = 0,
-
-		ZIndex = 100
-	})
-
-	Corner(SettingsPanel,18)
-	Stroke(SettingsPanel,Theme.Stroke)
-
-	New("UIPadding",{
-		Parent = SettingsPanel,
-
-		PaddingTop = UDim.new(0,14),
-		PaddingBottom = UDim.new(0,14),
-		PaddingLeft = UDim.new(0,14),
-		PaddingRight = UDim.new(0,14)
-	})
-
-	New("UIListLayout",{
-		Parent = SettingsPanel,
-		Padding = UDim.new(0,10)
-	})
-
-	local function SettingButton(text,callback)
-
-		local Btn = New("TextButton",{
-			Parent = SettingsPanel,
-
-			Size = UDim2.new(1,0,0,42),
-
-			BackgroundColor3 = Theme.Surface2,
+	--// CREATE PANEL CONTROLS
+	local function CreateButton(parent, text, onClick)
+		local Btn = New("TextButton", {
+			Parent = parent,
+			Size = UDim2.new(1, 0, 0, 44),
+			BackgroundColor3 = CurrentTheme().Surface2,
 			BorderSizePixel = 0,
-
 			Text = text,
-			TextColor3 = Theme.Text,
+			TextColor3 = CurrentTheme().Text,
 			TextSize = 14,
-
 			Font = Enum.Font.GothamMedium,
-
-			ZIndex = 101
+			AutoButtonColor = false,
+			ZIndex = 70
 		})
-
-		Corner(Btn,12)
-		Stroke(Btn,Theme.Stroke)
+		Corner(Btn, 12)
+		Stroke(Btn, CurrentTheme().Stroke, 1)
 
 		Btn.MouseButton1Click:Connect(function()
+			Tween(Btn, {Size = UDim2.new(1, 0, 0, 40)}, 0.08)
+			task.wait(0.08)
+			Tween(Btn, {Size = UDim2.new(1, 0, 0, 44)}, 0.08)
+			if onClick then
+				onClick()
+			end
+		end)
 
+		AddRefresher(function()
+			local T = CurrentTheme()
+			Btn.BackgroundColor3 = T.Surface2
+			Btn.TextColor3 = T.Text
+		end)
+
+		return Btn
+	end
+
+	local function CreateToggle(parent, text, default, callback)
+		local Value = default and true or false
+
+		local Toggle = New("TextButton", {
+			Parent = parent,
+			Size = UDim2.new(1, 0, 0, 50),
+			BackgroundColor3 = CurrentTheme().Surface2,
+			BorderSizePixel = 0,
+			Text = "",
+			AutoButtonColor = false,
+			ZIndex = 70
+		})
+		Corner(Toggle, 12)
+		Stroke(Toggle, CurrentTheme().Stroke, 1)
+
+		local Label = New("TextLabel", {
+			Parent = Toggle,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(14, 0),
+			Size = UDim2.new(1, -90, 1, 0),
+			Text = text,
+			TextColor3 = CurrentTheme().Text,
+			TextSize = 14,
+			Font = Enum.Font.GothamMedium,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 71
+		})
+
+		local Switch = New("Frame", {
+			Parent = Toggle,
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -14, 0.5, 0),
+			Size = UDim2.fromOffset(50, 24),
+			BackgroundColor3 = Value and CurrentTheme().Accent or Color3.fromRGB(60, 60, 70),
+			BorderSizePixel = 0,
+			ZIndex = 72
+		})
+		Corner(Switch, 999)
+
+		local Knob = New("Frame", {
+			Parent = Switch,
+			Size = UDim2.fromOffset(18, 18),
+			Position = Value and UDim2.fromOffset(28, 3) or UDim2.fromOffset(3, 3),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0,
+			ZIndex = 73
+		})
+		Corner(Knob, 999)
+
+		local function Render()
+			local T = CurrentTheme()
+			if Value then
+				Tween(Switch, {BackgroundColor3 = T.Accent}, 0.15)
+				Tween(Knob, {Position = UDim2.fromOffset(28, 3)}, 0.15)
+			else
+				Tween(Switch, {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}, 0.15)
+				Tween(Knob, {Position = UDim2.fromOffset(3, 3)}, 0.15)
+			end
+		end
+
+		Toggle.MouseButton1Click:Connect(function()
+			Value = not Value
+			Render()
 			if callback then
-				callback()
+				callback(Value)
+			end
+			Persist()
+		end)
+
+		AddRefresher(function()
+			local T = CurrentTheme()
+			Toggle.BackgroundColor3 = T.Surface2
+			Label.TextColor3 = T.Text
+			Stroke(Toggle, T.Stroke, 1)
+			if Value then
+				Switch.BackgroundColor3 = T.Accent
+			else
+				Switch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+			end
+		end)
+
+		Render()
+		return Toggle
+	end
+
+	local function CreateSlider(parent, text, min, max, default, callback, step)
+		local Value = Clamp(default or min or 0, min or 0, max or 100)
+		step = step or 1
+
+		local Slider = New("Frame", {
+			Parent = parent,
+			Size = UDim2.new(1, 0, 0, 64),
+			BackgroundColor3 = CurrentTheme().Surface2,
+			BorderSizePixel = 0,
+			ZIndex = 70
+		})
+		Corner(Slider, 12)
+		Stroke(Slider, CurrentTheme().Stroke, 1)
+
+		local Label = New("TextLabel", {
+			Parent = Slider,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(14, 8),
+			Size = UDim2.new(1, -28, 0, 16),
+			Text = text,
+			TextColor3 = CurrentTheme().Text,
+			TextSize = 14,
+			Font = Enum.Font.GothamMedium,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 71
+		})
+
+		local ValueLabel = New("TextLabel", {
+			Parent = Slider,
+			BackgroundTransparency = 1,
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -14, 0, 8),
+			Size = UDim2.fromOffset(80, 16),
+			Text = tostring(Value),
+			TextColor3 = CurrentTheme().TextDim,
+			TextSize = 12,
+			Font = Enum.Font.Gotham,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			ZIndex = 71
+		})
+
+		local Bar = New("Frame", {
+			Parent = Slider,
+			Position = UDim2.fromOffset(14, 36),
+			Size = UDim2.new(1, -28, 0, 10),
+			BackgroundColor3 = Color3.fromRGB(45, 45, 55),
+			BorderSizePixel = 0,
+			ZIndex = 71
+		})
+		Corner(Bar, 999)
+
+		local Fill = New("Frame", {
+			Parent = Bar,
+			Size = UDim2.fromScale(0, 1),
+			BackgroundColor3 = CurrentTheme().Accent,
+			BorderSizePixel = 0,
+			ZIndex = 72
+		})
+		Corner(Fill, 999)
+
+		local Knob = New("Frame", {
+			Parent = Bar,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0, 0.5),
+			Size = UDim2.fromOffset(18, 18),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0,
+			ZIndex = 73
+		})
+		Corner(Knob, 999)
+
+		local dragging = false
+		local function SetValue(v, silent)
+			v = Clamp(v, min, max)
+			if step and step > 0 then
+				v = math.floor((v / step) + 0.5) * step
+			end
+			Value = v
+			ValueLabel.Text = tostring(Value)
+
+			local pct = (Value - min) / math.max(1, (max - min))
+			Fill.Size = UDim2.new(pct, 0, 1, 0)
+			Knob.Position = UDim2.new(pct, 0, 0.5, 0)
+
+			if not silent and callback then
+				callback(Value)
+			end
+		end
+
+		local function UpdateFromInput(input)
+			local rel = (input.Position.X - Bar.AbsolutePosition.X) / math.max(1, Bar.AbsoluteSize.X)
+			SetValue(min + (max - min) * Clamp(rel, 0, 1))
+		end
+
+		Bar.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				UpdateFromInput(input)
+			end
+		end)
+
+		UIS.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+				Persist()
+			end
+		end)
+
+		UIS.InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				UpdateFromInput(input)
+			end
+		end)
+
+		AddRefresher(function()
+			local T = CurrentTheme()
+			Slider.BackgroundColor3 = T.Surface2
+			Label.TextColor3 = T.Text
+			ValueLabel.TextColor3 = T.TextDim
+			Bar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+			Fill.BackgroundColor3 = T.Accent
+			Knob.BackgroundColor3 = Color3.new(1, 1, 1)
+			Stroke(Slider, T.Stroke, 1)
+		end)
+
+		SetValue(Value, true)
+		return {
+			Frame = Slider,
+			Set = SetValue,
+			Get = function()
+				return Value
+			end,
+		}
+	end
+
+	local function CreateTextbox(parent, text, placeholder, callback)
+		local BoxWrap = New("Frame", {
+			Parent = parent,
+			Size = UDim2.new(1, 0, 0, 68),
+			BackgroundColor3 = CurrentTheme().Surface2,
+			BorderSizePixel = 0,
+			ZIndex = 70
+		})
+		Corner(BoxWrap, 12)
+		Stroke(BoxWrap, CurrentTheme().Stroke, 1)
+
+		local Label = New("TextLabel", {
+			Parent = BoxWrap,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(14, 8),
+			Size = UDim2.new(1, -28, 0, 16),
+			Text = text,
+			TextColor3 = CurrentTheme().Text,
+			TextSize = 14,
+			Font = Enum.Font.GothamMedium,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 71
+		})
+
+		local Box = New("TextBox", {
+			Parent = BoxWrap,
+			Position = UDim2.fromOffset(14, 30),
+			Size = UDim2.new(1, -28, 0, 26),
+			BackgroundColor3 = CurrentTheme().Background,
+			BorderSizePixel = 0,
+			ClearTextOnFocus = false,
+			Text = "",
+			PlaceholderText = placeholder or "",
+			TextColor3 = CurrentTheme().Text,
+			PlaceholderColor3 = CurrentTheme().TextDim,
+			TextSize = 13,
+			Font = Enum.Font.Gotham,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 71
+		})
+		Corner(Box, 8)
+		Stroke(Box, CurrentTheme().Stroke, 1)
+
+		Box.FocusLost:Connect(function(enterPressed)
+			if enterPressed and callback then
+				callback(Box.Text)
+				Persist()
+			end
+		end)
+
+		AddRefresher(function()
+			local T = CurrentTheme()
+			BoxWrap.BackgroundColor3 = T.Surface2
+			Label.TextColor3 = T.Text
+			Box.BackgroundColor3 = T.Background
+			Box.TextColor3 = T.Text
+			Box.PlaceholderColor3 = T.TextDim
+			Stroke(BoxWrap, T.Stroke, 1)
+			Stroke(Box, T.Stroke, 1)
+		end)
+
+		return BoxWrap, Box
+	end
+
+	--// SETTING HELPERS
+	local function CreateSettingsButton(text, name)
+		local Btn = New("TextButton", {
+			Parent = ThemeGridWrap,
+			Size = UDim2.fromOffset(0, 34),
+			BackgroundColor3 = CurrentTheme().Surface,
+			BorderSizePixel = 0,
+			Text = text,
+			TextColor3 = CurrentTheme().Text,
+			TextSize = 13,
+			Font = Enum.Font.GothamMedium,
+			AutoButtonColor = false,
+			ZIndex = 63
+		})
+		Corner(Btn, 10)
+		Stroke(Btn, CurrentTheme().Stroke, 1)
+
+		Btn.MouseButton1Click:Connect(function()
+			SetTheme(name)
+		end)
+
+		AddRefresher(function()
+			local T = CurrentTheme()
+			Btn.TextColor3 = T.Text
+			Stroke(Btn, T.Stroke, 1)
+			if State.ThemeName == name then
+				Btn.BackgroundColor3 = T.Accent
+				Btn.TextColor3 = Color3.new(1, 1, 1)
+			else
+				Btn.BackgroundColor3 = T.Surface
 			end
 		end)
 
 		return Btn
 	end
 
-	--// SETTINGS FEATURES
-
-	SettingButton("Theme: Default",function()
-
-		Library:SetTheme("Default")
-
-		Main.BackgroundColor3 = Theme.Background
-	end)
-
-	SettingButton("Theme: Liquid Glass",function()
-
-		Library:SetTheme("LiquidGlass")
-
-		Main.BackgroundColor3 = Theme.Background
-	end)
-
-	SettingButton("Theme: Cyber Neo",function()
-
-		Library:SetTheme("CyberNeo")
-
-		Main.BackgroundColor3 = Theme.Background
-	end)
-
-	SettingButton("Theme: 3066 Years",function()
-
-		Library:SetTheme("Years3066")
-
-		Main.BackgroundColor3 = Theme.Background
-	end)
-
-	SettingButton("UI Scale 0.8",function()
-
-		Tween(Scale,{
-			Scale = 0.8
-		},0.2)
-	end)
-
-	SettingButton("UI Scale 1.0",function()
-
-		Tween(Scale,{
-			Scale = 1
-		},0.2)
-	end)
-
-	SettingButton("UI Scale 1.2",function()
-
-		Tween(Scale,{
-			Scale = 1.2
-		},0.2)
-	end)
-
-	SettingButton("Width +100",function()
-
-		Main.Size = Main.Size + UDim2.fromOffset(100,0)
-	end)
-
-	SettingButton("Height +100",function()
-
-		Main.Size = Main.Size + UDim2.fromOffset(0,100)
-	end)
-
-	--// OPEN SETTINGS
-
-	SettingsButton.MouseButton1Click:Connect(function()
-
-		SettingsPanel.Visible = not SettingsPanel.Visible
-	end)
-
-	--// HIDE
-
-	HideButton.MouseButton1Click:Connect(function()
-
-		Tween(Main,{
-			Size = UDim2.fromOffset(0,0)
-		},0.2)
-
-		task.wait(0.2)
-
-		Main.Visible = false
-		Orb.Visible = true
-	end)
-
-	--// NAVIGATION
-
-	local LandscapeNav = New("Frame",{
-		Parent = Main,
-
-		BackgroundColor3 = Theme.Surface,
-		BorderSizePixel = 0,
-
-		ZIndex = 20
-	})
-
-	Corner(LandscapeNav,18)
-	Stroke(LandscapeNav,Theme.Stroke)
-
-	New("UIPadding",{
-		Parent = LandscapeNav,
-
-		PaddingTop = UDim.new(0,12),
-		PaddingBottom = UDim.new(0,12),
-		PaddingLeft = UDim.new(0,12),
-		PaddingRight = UDim.new(0,12)
-	})
-
-	New("UIListLayout",{
-		Parent = LandscapeNav,
-
-		Padding = UDim.new(0,8)
-	})
-
-	--// PAGE HOLDER
-
-	local PageHolder = New("Frame",{
-		Parent = Main,
-
-		BackgroundTransparency = 1,
-		ZIndex = 30
-	})
-
-	--// RESPONSIVE
-
-	local function UpdateLayout()
-
-		RunService.Heartbeat:Wait()
-
-		Main.Position = UDim2.fromScale(0.5,0.5)
-
-		LandscapeNav.Position = UDim2.new(0,12,0,68)
-		LandscapeNav.Size = UDim2.new(0,220,1,-80)
-
-		PageHolder.Position = UDim2.new(0,244,0,68)
-		PageHolder.Size = UDim2.new(1,-256,1,-80)
+	for _, themeInfo in ipairs(ThemeNames) do
+		CreateSettingsButton(themeInfo.Label, themeInfo.Key)
 	end
 
-	UpdateLayout()
+	local WidthSlider = CreateSlider(LayoutSection, "Window Width", 340, 1400, State.Width, function(v)
+		State.Width = math.floor(v)
+		UpdateLayout()
+		Persist()
+	end, 1)
+
+	local HeightSlider = CreateSlider(LayoutSection, "Window Height", 260, 900, State.Height, function(v)
+		State.Height = math.floor(v)
+		UpdateLayout()
+		Persist()
+	end, 1)
+
+	local XOffsetSlider = CreateSlider(LayoutSection, "Offset X", -600, 600, State.OffsetX, function(v)
+		State.OffsetX = math.floor(v)
+		UpdateLayout()
+		Persist()
+	end, 1)
+
+	local YOffsetSlider = CreateSlider(LayoutSection, "Offset Y", -400, 400, State.OffsetY, function(v)
+		State.OffsetY = math.floor(v)
+		UpdateLayout()
+		Persist()
+	end, 1)
+
+	local SaveToggle = CreateToggle(MiscSection, "Save Settings Forever", State.SaveSettings, function(v)
+		State.SaveSettings = v
+		Persist()
+	end)
+
+	local KeyToggle = CreateToggle(MiscSection, "Key System", State.KeySystem, function(v)
+		State.KeySystem = v
+		Persist()
+	end)
+
+	local _, KeyRequiredBox = CreateTextbox(MiscSection, "Required Base64 Key", "Optional exact key", function(txt)
+		State.RequiredKey = tostring(txt or "")
+		Persist()
+	end)
+	KeyRequiredBox.Text = State.RequiredKey
+
+	CreateButton(MiscSection, "Apply Theme", function()
+		SetTheme(State.ThemeName)
+	end)
+
+	CreateButton(MiscSection, "Reset Window Size", function()
+		State.Width = 900
+		State.Height = 620
+		State.OffsetX = 0
+		State.OffsetY = 0
+		WidthSlider.Set(State.Width)
+		HeightSlider.Set(State.Height)
+		XOffsetSlider.Set(State.OffsetX)
+		YOffsetSlider.Set(State.OffsetY)
+		UpdateLayout()
+		Persist()
+	end)
 
 	--// TABS
-
 	local Tabs = {}
 
 	function Library:CreateTab(name)
-
 		local Tab = {}
+		local Data = {
+			Name = name,
+			Active = false,
+			LandButton = nil,
+			LandLabel = nil,
+			PortButton = nil,
+			PortLabel = nil,
+			Page = nil,
+		}
 
-		local Button = New("TextButton",{
+		local LandButton = New("TextButton", {
 			Parent = LandscapeNav,
-
-			Size = UDim2.new(1,0,0,42),
-
-			BackgroundColor3 = Theme.Surface2,
+			Size = UDim2.new(1, 0, 0, 42),
+			BackgroundColor3 = CurrentTheme().Surface2,
 			BorderSizePixel = 0,
-
 			Text = "",
 			AutoButtonColor = false,
-
 			ZIndex = 25
 		})
+		Corner(LandButton, 12)
+		Stroke(LandButton, CurrentTheme().Stroke, 1)
 
-		Corner(Button,12)
-		Stroke(Button,Theme.Stroke)
-
-		local Label = New("TextLabel",{
-			Parent = Button,
-
+		local LandLabel = New("TextLabel", {
+			Parent = LandButton,
 			BackgroundTransparency = 1,
-
-			Position = UDim2.fromOffset(14,0),
-			Size = UDim2.new(1,-28,1,0),
-
+			Position = UDim2.fromOffset(14, 0),
+			Size = UDim2.new(1, -28, 1, 0),
 			Text = name,
-			TextColor3 = Theme.TextDim,
+			TextColor3 = CurrentTheme().TextDim,
 			TextSize = 14,
-
 			Font = Enum.Font.GothamMedium,
 			TextXAlignment = Enum.TextXAlignment.Left,
-
 			ZIndex = 26
 		})
 
-		local Page = New("ScrollingFrame",{
+		local PortButton = New("TextButton", {
+			Parent = PortraitNav,
+			Size = UDim2.fromOffset(110, 36),
+			BackgroundColor3 = CurrentTheme().Surface2,
+			BorderSizePixel = 0,
+			Text = "",
+			AutoButtonColor = false,
+			ZIndex = 25
+		})
+		Corner(PortButton, 12)
+		Stroke(PortButton, CurrentTheme().Stroke, 1)
+
+		local PortLabel = New("TextLabel", {
+			Parent = PortButton,
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			Text = name,
+			TextColor3 = CurrentTheme().TextDim,
+			TextSize = 13,
+			Font = Enum.Font.GothamMedium,
+			ZIndex = 26
+		})
+
+		local Page = New("ScrollingFrame", {
 			Parent = PageHolder,
-
 			Visible = false,
-
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-
-			Size = UDim2.fromScale(1,1),
-
+			Size = UDim2.fromScale(1, 1),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			CanvasSize = UDim2.fromOffset(0,0),
-
+			CanvasSize = UDim2.fromOffset(0, 0),
+			ScrollingDirection = Enum.ScrollingDirection.Y,
 			ScrollBarThickness = 4,
-
 			ZIndex = 35
 		})
 
-		New("UIPadding",{
+		New("UIPadding", {
 			Parent = Page,
-
-			PaddingTop = UDim.new(0,4),
-			PaddingBottom = UDim.new(0,4),
-			PaddingLeft = UDim.new(0,4),
-			PaddingRight = UDim.new(0,4)
+			PaddingTop = UDim.new(0, 4),
+			PaddingBottom = UDim.new(0, 4),
+			PaddingLeft = UDim.new(0, 4),
+			PaddingRight = UDim.new(0, 4)
 		})
 
-		New("UIListLayout",{
+		New("UIListLayout", {
 			Parent = Page,
-			Padding = UDim.new(0,12)
+			Padding = UDim.new(0, 12),
+			SortOrder = Enum.SortOrder.LayoutOrder
 		})
 
-		table.insert(Tabs,{
-			Button = Button,
-			Label = Label,
-			Page = Page
-		})
+		Data.LandButton = LandButton
+		Data.LandLabel = LandLabel
+		Data.PortButton = PortButton
+		Data.PortLabel = PortLabel
+		Data.Page = Page
 
-		local function Select()
+		table.insert(Tabs, Data)
 
-			for _,t in pairs(Tabs) do
-
+		local function Click()
+			for _, t in ipairs(Tabs) do
+				t.Active = false
+				Tween(t.LandButton, {BackgroundColor3 = CurrentTheme().Surface2}, 0.15)
+				Tween(t.PortButton, {BackgroundColor3 = CurrentTheme().Surface2}, 0.15)
+				Tween(t.LandLabel, {TextColor3 = CurrentTheme().TextDim}, 0.15)
+				Tween(t.PortLabel, {TextColor3 = CurrentTheme().TextDim}, 0.15)
 				t.Page.Visible = false
-
-				Tween(t.Button,{
-					BackgroundColor3 = Theme.Surface2
-				},0.15)
-
-				Tween(t.Label,{
-					TextColor3 = Theme.TextDim
-				},0.15)
 			end
 
+			Data.Active = true
+			Tween(LandButton, {BackgroundColor3 = CurrentTheme().Accent}, 0.15)
+			Tween(PortButton, {BackgroundColor3 = CurrentTheme().Accent}, 0.15)
+			Tween(LandLabel, {TextColor3 = Color3.new(1, 1, 1)}, 0.15)
+			Tween(PortLabel, {TextColor3 = Color3.new(1, 1, 1)}, 0.15)
 			Page.Visible = true
-
-			Tween(Button,{
-				BackgroundColor3 = Theme.Accent
-			},0.15)
-
-			Tween(Label,{
-				TextColor3 = Color3.new(1,1,1)
-			},0.15)
+			State.CurrentTab = Data
 		end
 
-		Button.MouseButton1Click:Connect(Select)
+		LandButton.MouseButton1Click:Connect(Click)
+		PortButton.MouseButton1Click:Connect(Click)
 
-		if #Tabs == 1 then
-			task.defer(Select)
-		end
-
-		--// SECTION
+		AddRefresher(function()
+			local T = CurrentTheme()
+			LandButton.BackgroundColor3 = Data.Active and T.Accent or T.Surface2
+			PortButton.BackgroundColor3 = Data.Active and T.Accent or T.Surface2
+			LandLabel.TextColor3 = Data.Active and Color3.new(1, 1, 1) or T.TextDim
+			PortLabel.TextColor3 = Data.Active and Color3.new(1, 1, 1) or T.TextDim
+			Stroke(LandButton, T.Stroke, 1)
+			Stroke(PortButton, T.Stroke, 1)
+		end)
 
 		function Tab:CreateSection(title)
-
 			local Section = {}
 
-			local Holder = New("Frame",{
+			local Holder = New("Frame", {
 				Parent = Page,
-
-				BackgroundColor3 = Theme.Surface,
+				BackgroundColor3 = CurrentTheme().Surface,
 				BorderSizePixel = 0,
-
 				AutomaticSize = Enum.AutomaticSize.Y,
-				Size = UDim2.new(1,-2,0,0),
-
+				Size = UDim2.new(1, -2, 0, 0),
 				ZIndex = 40
 			})
+			Corner(Holder, 16)
+			Stroke(Holder, CurrentTheme().Stroke, 1)
 
-			Corner(Holder,16)
-			Stroke(Holder,Theme.Stroke)
-
-			New("UIPadding",{
+			New("UIPadding", {
 				Parent = Holder,
-
-				PaddingTop = UDim.new(0,14),
-				PaddingBottom = UDim.new(0,14),
-				PaddingLeft = UDim.new(0,14),
-				PaddingRight = UDim.new(0,14)
+				PaddingTop = UDim.new(0, 14),
+				PaddingBottom = UDim.new(0, 14),
+				PaddingLeft = UDim.new(0, 14),
+				PaddingRight = UDim.new(0, 14)
 			})
 
-			New("UIListLayout",{
+			New("UIListLayout", {
 				Parent = Holder,
-				Padding = UDim.new(0,10)
+				Padding = UDim.new(0, 10),
+				SortOrder = Enum.SortOrder.LayoutOrder
 			})
 
-			New("TextLabel",{
+			local Header = New("TextLabel", {
 				Parent = Holder,
-
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1,0,0,20),
-
+				Size = UDim2.new(1, 0, 0, 20),
 				Text = title,
-				TextColor3 = Theme.Text,
+				TextColor3 = CurrentTheme().Text,
 				TextSize = 15,
-
 				Font = Enum.Font.GothamBold,
-				TextXAlignment = Enum.TextXAlignment.Left
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 41
 			})
 
-			--// BUTTON
+			AddRefresher(function()
+				local T = CurrentTheme()
+				Holder.BackgroundColor3 = T.Surface
+				Header.TextColor3 = T.Text
+				Stroke(Holder, T.Stroke, 1)
+			end)
 
-			function Section:Button(text,callback)
-
-				local Btn = New("TextButton",{
-					Parent = Holder,
-
-					Size = UDim2.new(1,0,0,44),
-
-					BackgroundColor3 = Theme.Surface2,
-					BorderSizePixel = 0,
-
-					Text = text,
-					TextColor3 = Theme.Text,
-					TextSize = 14,
-
-					Font = Enum.Font.GothamMedium,
-
-					AutoButtonColor = false
-				})
-
-				Corner(Btn,12)
-				Stroke(Btn,Theme.Stroke)
-
-				Btn.MouseButton1Click:Connect(function()
-
-					if callback then
-						callback()
-					end
-				end)
-
-				return Btn
+			function Section:Button(text, callback)
+				return CreateButton(Holder, text, callback)
 			end
 
-			--// TOGGLE
+			function Section:Toggle(text, default, callback)
+				return CreateToggle(Holder, text, default, callback)
+			end
 
-			function Section:Toggle(text,default,callback)
+			function Section:Slider(text, min, max, default, callback, step)
+				return CreateSlider(Holder, text, min, max, default, callback, step)
+			end
 
-				local Value = default or false
-
-				local Toggle = New("TextButton",{
-					Parent = Holder,
-
-					Size = UDim2.new(1,0,0,50),
-
-					BackgroundColor3 = Theme.Surface2,
-					BorderSizePixel = 0,
-
-					Text = ""
-				})
-
-				Corner(Toggle,12)
-				Stroke(Toggle,Theme.Stroke)
-
-				New("TextLabel",{
-					Parent = Toggle,
-
-					BackgroundTransparency = 1,
-
-					Position = UDim2.fromOffset(14,0),
-					Size = UDim2.new(1,-90,1,0),
-
-					Text = text,
-					TextColor3 = Theme.Text,
-					TextSize = 14,
-
-					Font = Enum.Font.GothamMedium,
-					TextXAlignment = Enum.TextXAlignment.Left
-				})
-
-				local Switch = New("Frame",{
-					Parent = Toggle,
-
-					AnchorPoint = Vector2.new(1,0.5),
-					Position = UDim2.new(1,-14,0.5,0),
-
-					Size = UDim2.fromOffset(50,24),
-
-					BackgroundColor3 = Value and Theme.Accent or Color3.fromRGB(60,60,70),
-					BorderSizePixel = 0
-				})
-
-				Corner(Switch,999)
-
-				local Knob = New("Frame",{
-					Parent = Switch,
-
-					Size = UDim2.fromOffset(18,18),
-					Position = Value and UDim2.fromOffset(28,3) or UDim2.fromOffset(3,3),
-
-					BackgroundColor3 = Color3.new(1,1,1),
-					BorderSizePixel = 0
-				})
-
-				Corner(Knob,999)
-
-				local function Render()
-
-					if Value then
-
-						Tween(Switch,{
-							BackgroundColor3 = Theme.Accent
-						},0.15)
-
-						Tween(Knob,{
-							Position = UDim2.fromOffset(28,3)
-						},0.15)
-
-					else
-
-						Tween(Switch,{
-							BackgroundColor3 = Color3.fromRGB(60,60,70)
-						},0.15)
-
-						Tween(Knob,{
-							Position = UDim2.fromOffset(3,3)
-						},0.15)
-					end
-				end
-
-				Toggle.MouseButton1Click:Connect(function()
-
-					Value = not Value
-					Render()
-
-					if callback then
-						callback(Value)
-					end
-				end)
-
-				Render()
-
-				return Toggle
+			function Section:Textbox(text, placeholder, callback)
+				return CreateTextbox(Holder, text, placeholder, callback)
 			end
 
 			return Section
 		end
 
-		return Tab
+		function SectionEnd()
+			-- no-op placeholder
+		end
+
+		return setmetatable(Tab, {
+			__index = function(_, key)
+				return Data[key]
+			end
+		})
 	end
 
-	return Library
+	--// FINAL THEME REFRESH
+	AddRefresher(function()
+		local T = CurrentTheme()
+		Stroke(Main, T.Stroke, 1)
+		Stroke(KeyCard, T.Stroke, 1)
+		Stroke(KeyBox, T.Stroke, 1)
+		Stroke(KeySubmit, T.Stroke, 0)
+		Stroke(SettingsPanel, T.Stroke, 1)
+		Stroke(SettingsClose, T.Stroke, 1)
+		Stroke(LandscapeNav, T.Stroke, 1)
+		Stroke(PortraitNav, T.Stroke, 1)
+
+		Main.BackgroundColor3 = T.Background
+		LandscapeNav.BackgroundColor3 = T.Surface
+		PortraitNav.BackgroundColor3 = T.Surface
+		SettingsPanel.BackgroundColor3 = T.Surface
+
+		Title.TextColor3 = T.Text
+		Subtitle.TextColor3 = T.TextDim
+		SettingsTitle.TextColor3 = T.Text
+		SettingsClose.BackgroundColor3 = T.Surface2
+		SettingsClose.TextColor3 = T.Text
+		SettingsButton.BackgroundColor3 = T.Surface2
+		SettingsButton.TextColor3 = T.Text
+		HideButton.BackgroundColor3 = T.Surface2
+		HideButton.TextColor3 = T.Text
+
+		KeyCard.BackgroundColor3 = T.Surface
+		KeyTitle.TextColor3 = T.Text
+		KeyInfo.TextColor3 = T.TextDim
+		KeyBox.BackgroundColor3 = T.Surface2
+		KeyBox.TextColor3 = T.Text
+		KeyBox.PlaceholderColor3 = T.TextDim
+		KeySubmit.BackgroundColor3 = T.Accent
+		KeySubmit.TextColor3 = Color3.new(1, 1, 1)
+		KeyStatus.TextColor3 = T.TextDim
+
+		Orb.BackgroundColor3 = T.Accent
+
+		ThemeSection.BackgroundColor3 = T.Surface2
+		LayoutSection.BackgroundColor3 = T.Surface2
+		MiscSection.BackgroundColor3 = T.Surface2
+
+		ThemeHeader.TextColor3 = T.Text
+		LayoutHeader.TextColor3 = T.Text
+		MiscHeader.TextColor3 = T.Text
+	end)
+
+	--// APPLY INITIAL VALUES
+	UpdateLayout()
+	RefreshAll()
+
+	--// FIRST TAB AUTO SELECT
+	task.defer(function()
+		if #Tabs > 0 and Tabs[1].LandButton then
+			Tabs[1].LandButton.MouseButton1Click:Fire()
+		end
+	end)
+
+	--// MAKE THE WINDOW SAFE ON LOAD
+	SetHidden(false)
+
+	--// EXTERNAL API
+	local API = {}
+
+	function API:Destroy()
+		if Screen then
+			Screen:Destroy()
+		end
+	end
+
+	function API:SetTheme(name)
+		SetTheme(name)
+	end
+
+	function API:Show()
+		SetHidden(false)
+	end
+
+	function API:Hide()
+		SetHidden(true)
+	end
+
+	function API:GetState()
+		return {
+			ThemeName = State.ThemeName,
+			Width = State.Width,
+			Height = State.Height,
+			OffsetX = State.OffsetX,
+			OffsetY = State.OffsetY,
+			SaveSettings = State.SaveSettings,
+			KeySystem = State.KeySystem,
+			RequiredKey = State.RequiredKey,
+			Hidden = State.Hidden,
+		}
+	end
+
+	function API:SetSize(width, height)
+		State.Width = Clamp(tonumber(width) or State.Width, 340, 1400)
+		State.Height = Clamp(tonumber(height) or State.Height, 260, 900)
+		WidthSlider.Set(State.Width)
+		HeightSlider.Set(State.Height)
+		UpdateLayout()
+		Persist()
+	end
+
+	function API:SetOffset(x, y)
+		State.OffsetX = Clamp(tonumber(x) or State.OffsetX, -600, 600)
+		State.OffsetY = Clamp(tonumber(y) or State.OffsetY, -400, 400)
+		XOffsetSlider.Set(State.OffsetX)
+		YOffsetSlider.Set(State.OffsetY)
+		UpdateLayout()
+		Persist()
+	end
+
+	function API:SetKeySystemEnabled(enabled)
+		State.KeySystem = enabled and true or false
+		Persist()
+	end
+
+	if cfg.AutoOpenSettings == true then
+		SettingsPanel.Visible = true
+	end
+
+	return setmetatable(Library, {
+		__index = API
+	})
 end
 
 --// ======================================================================
---// EXAMPLE
+--// EXAMPLE / DEMO
 --// ======================================================================
 
 local Window = Library:CreateWindow({
 	Title = "Kilometres UI X",
-	Subtitle = "PREMIUM MOBILE FRAMEWORK"
+	Subtitle = "Full rebuild with settings + orb",
+	Theme = "Default",
+	SaveSettings = true,
+	KeySystem = false, -- set true to require Base64 key
+	RequiredKey = "",  -- put your exact Base64 key here if you want an exact match
 })
 
-local Main = Library:CreateTab("Main")
-local Visuals = Library:CreateTab("Visuals")
-local Settings = Library:CreateTab("Settings")
+local MainTab = Library:CreateTab("Main")
+local VisualTab = Library:CreateTab("Visuals")
+local SettingsTab = Library:CreateTab("Settings")
 
-local Core = Main:CreateSection("Core")
-
-Core:Button("Notification",function()
-	print("clicked")
+local Core = MainTab:CreateSection("Core")
+Core:Button("Notification", function()
+	print("Clicked")
+end)
+Core:Toggle("Auto Farm", false, function(v)
+	print("Auto Farm:", v)
+end)
+Core:Slider("Walk Speed", 16, 100, 16, function(v)
+	print("Walk Speed:", v)
+end, 1)
+Core:Textbox("Message", "Type something...", function(text)
+	print("Text:", text)
 end)
 
-Core:Toggle("Auto Farm",false,function(v)
-	print(v)
+local Visuals = VisualTab:CreateSection("ESP")
+Visuals:Toggle("Player ESP", false, function(v)
+	print("ESP:", v)
 end)
-
-local ESP = Visuals:CreateSection("ESP")
-
-ESP:Toggle("Player ESP",false,function(v)
-	print(v)
-end)
-
-ESP:Button("Refresh ESP",function()
+Visuals:Button("Refresh ESP", function()
 	print("refresh")
 end)
+Visuals:Slider("Brightness", 0, 100, 50, function(v)
+	print("Brightness:", v)
+end, 1)
 
-local Misc = Settings:CreateSection("UI")
-
-Misc:Button("Destroy UI",function()
-
-	local gui = CoreGui:FindFirstChild("KilometresUIX")
-
+local UISection = SettingsTab:CreateSection("UI")
+UISection:Button("Hide UI", function()
+	Window:Hide()
+end)
+UISection:Button("Show UI", function()
+	Window:Show()
+end)
+UISection:Button("Destroy UI", function()
+	local gui = game:GetService("CoreGui"):FindFirstChild("KilometresUIX")
 	if gui then
 		gui:Destroy()
 	end
