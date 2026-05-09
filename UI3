@@ -1,16 +1,22 @@
 --// ======================================================================
---// KILOMETRES UI X V3
+--// KILOMETRES UI X V3 FIXED
 --// REAL MOBILE + LANDSCAPE REBUILD
---// Stable Orientation System
---// No Broken Hitboxes
---// Separate Portrait + Landscape Navigation
+--// FIXED:
+--// ✅ Tabs Visible
+--// ✅ Elements Visible
+--// ✅ Proper ZIndex
+--// ✅ Landscape Stable
+--// ✅ Portrait Stable
+--// ✅ Working Sections
+--// ✅ Working Buttons
+--// ✅ Working Toggles
 --// ======================================================================
 
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
-local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -86,16 +92,16 @@ end
 --// ======================================================================
 
 local Theme = {
-	Background = Color3.fromRGB(11,11,14),
-	Surface = Color3.fromRGB(18,18,24),
-	Surface2 = Color3.fromRGB(26,26,34),
-	Stroke = Color3.fromRGB(50,50,65),
+	Background = Color3.fromRGB(10,10,12),
+	Surface = Color3.fromRGB(17,17,23),
+	Surface2 = Color3.fromRGB(24,24,32),
+
+	Stroke = Color3.fromRGB(45,45,58),
 
 	Text = Color3.fromRGB(255,255,255),
 	TextDim = Color3.fromRGB(170,170,180),
 
-	Accent = Color3.fromRGB(135,110,255),
-	Accent2 = Color3.fromRGB(85,180,255),
+	Accent = Color3.fromRGB(130,110,255),
 }
 
 --// ======================================================================
@@ -116,10 +122,9 @@ function Library:CreateWindow(cfg)
 		ZIndexBehavior = Enum.ZIndexBehavior.Global
 	})
 
-	--// MAIN
-
 	local Main = New("Frame", {
 		Parent = Screen,
+
 		AnchorPoint = Vector2.new(0.5,0.5),
 		Position = UDim2.fromScale(0.5,0.5),
 
@@ -129,153 +134,131 @@ function Library:CreateWindow(cfg)
 		),
 
 		BackgroundColor3 = Theme.Background,
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
+
+		ZIndex = 1
 	})
 
-	Corner(Main, 20)
-	Stroke(Main, Theme.Stroke)
+	Corner(Main,20)
+	Stroke(Main,Theme.Stroke)
 
 	--// TOPBAR
 
 	local Topbar = New("Frame", {
 		Parent = Main,
 		Size = UDim2.new(1,0,0,58),
-		BackgroundTransparency = 1
+		BackgroundTransparency = 1,
+		ZIndex = 5
 	})
 
-	local Title = New("TextLabel", {
+	New("TextLabel", {
 		Parent = Topbar,
-		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(18,10),
-		Size = UDim2.new(1,-36,0,20),
 
-		Font = Enum.Font.GothamBold,
+		BackgroundTransparency = 1,
+
+		Position = UDim2.fromOffset(18,10),
+		Size = UDim2.new(1,-36,0,22),
+
 		Text = cfg.Title or "Kilometres UI X",
+		TextColor3 = Theme.Text,
 		TextSize = 18,
 
-		TextColor3 = Theme.Text,
-		TextXAlignment = Enum.TextXAlignment.Left
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+
+		ZIndex = 6
 	})
 
-	local Sub = New("TextLabel", {
+	New("TextLabel", {
 		Parent = Topbar,
+
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(18,30),
+
+		Position = UDim2.fromOffset(18,32),
 		Size = UDim2.new(1,-36,0,16),
 
-		Font = Enum.Font.Gotham,
-		Text = cfg.Subtitle or "Mobile Stable Framework",
+		Text = cfg.Subtitle or "Framework",
+		TextColor3 = Theme.TextDim,
 		TextSize = 12,
 
-		TextColor3 = Theme.TextDim,
-		TextXAlignment = Enum.TextXAlignment.Left
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Left,
+
+		ZIndex = 6
 	})
 
-	--// LANDSCAPE NAV
+	--// NAVIGATION
 
 	local LandscapeNav = New("Frame", {
 		Parent = Main,
+
 		BackgroundColor3 = Theme.Surface,
 		BorderSizePixel = 0,
-		Visible = true,
-		ZIndex = 50
+
+		ZIndex = 20
 	})
 
-	Corner(LandscapeNav, 18)
-	Stroke(LandscapeNav, Theme.Stroke)
-
-	local LandscapeLayout = New("UIListLayout", {
-		Parent = LandscapeNav,
-		Padding = UDim.new(0,8),
-		SortOrder = Enum.SortOrder.LayoutOrder
-	})
+	Corner(LandscapeNav,18)
+	Stroke(LandscapeNav,Theme.Stroke)
 
 	New("UIPadding", {
 		Parent = LandscapeNav,
+
 		PaddingTop = UDim.new(0,12),
+		PaddingBottom = UDim.new(0,12),
 		PaddingLeft = UDim.new(0,12),
-		PaddingRight = UDim.new(0,12),
+		PaddingRight = UDim.new(0,12)
 	})
 
-	--// PORTRAIT NAV
+	New("UIListLayout", {
+		Parent = LandscapeNav,
+
+		Padding = UDim.new(0,8),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
 
 	local PortraitNav = New("Frame", {
 		Parent = Main,
+
 		BackgroundColor3 = Theme.Surface,
 		BorderSizePixel = 0,
+
 		Visible = false,
-		ZIndex = 50
+
+		ZIndex = 20
 	})
 
-	Corner(PortraitNav, 18)
-	Stroke(PortraitNav, Theme.Stroke)
-
-	local PortraitLayout = New("UIListLayout", {
-		Parent = PortraitNav,
-		Padding = UDim.new(0,8),
-		FillDirection = Enum.FillDirection.Horizontal,
-		SortOrder = Enum.SortOrder.LayoutOrder
-	})
+	Corner(PortraitNav,18)
+	Stroke(PortraitNav,Theme.Stroke)
 
 	New("UIPadding", {
 		Parent = PortraitNav,
+
 		PaddingLeft = UDim.new(0,10),
-		PaddingRight = UDim.new(0,10),
+		PaddingRight = UDim.new(0,10)
+	})
+
+	New("UIListLayout", {
+		Parent = PortraitNav,
+
+		Padding = UDim.new(0,8),
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder
 	})
 
 	--// PAGE HOLDER
 
 	local PageHolder = New("Frame", {
 		Parent = Main,
-		BackgroundTransparency = 1
+		BackgroundTransparency = 1,
+		ZIndex = 30
 	})
 
-	--// TABS
-
-	local Tabs = {}
-	local CurrentTab = nil
-
-	local function SelectTab(tab)
-
-		CurrentTab = tab
-
-		for _,t in pairs(Tabs) do
-
-			t.Page.Visible = false
-
-			Tween(t.Button, {
-				BackgroundColor3 = Theme.Surface2
-			},0.15)
-
-			Tween(t.Label, {
-				TextColor3 = Theme.TextDim
-			},0.15)
-		end
-
-		tab.Page.Visible = true
-
-		Tween(tab.Button, {
-			BackgroundColor3 = Theme.Accent
-		},0.15)
-
-		Tween(tab.Label, {
-			TextColor3 = Color3.new(1,1,1)
-		},0.15)
-	end
-
-	--// RESPONSIVE SYSTEM
-
-	local resizing = false
+	--// RESPONSIVE
 
 	local function UpdateLayout()
 
-		if resizing then
-			return
-		end
-
-		resizing = true
-
-		task.wait(0.1)
+		RunService.Heartbeat:Wait()
 
 		local portrait = IsPortrait()
 
@@ -283,8 +266,6 @@ function Library:CreateWindow(cfg)
 			math.min(Camera.ViewportSize.X - 20, 900),
 			math.min(Camera.ViewportSize.Y - 20, 620)
 		)
-
-		Main.Position = UDim2.fromScale(0.5,0.5)
 
 		if portrait then
 
@@ -302,28 +283,29 @@ function Library:CreateWindow(cfg)
 			LandscapeNav.Visible = true
 			PortraitNav.Visible = false
 
-			LandscapeNav.Position = UDim2.new(0,10,0,68)
-			LandscapeNav.Size = UDim2.new(0,210,1,-78)
+			LandscapeNav.Position = UDim2.new(0,12,0,68)
+			LandscapeNav.Size = UDim2.new(0,220,1,-80)
 
-			PageHolder.Position = UDim2.new(0,230,0,68)
-			PageHolder.Size = UDim2.new(1,-240,1,-78)
+			PageHolder.Position = UDim2.new(0,244,0,68)
+			PageHolder.Size = UDim2.new(1,-256,1,-80)
 		end
-
-		resizing = false
 	end
 
 	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateLayout)
 
-	--// TAB CREATION
+	--// TABS
+
+	local Tabs = {}
 
 	function Library:CreateTab(name)
 
 		local Tab = {}
 
-		--// LANDSCAPE BUTTON
+		--// LAND BUTTON
 
 		local LandButton = New("TextButton", {
 			Parent = LandscapeNav,
+
 			Size = UDim2.new(1,0,0,42),
 
 			BackgroundColor3 = Theme.Surface2,
@@ -332,33 +314,35 @@ function Library:CreateWindow(cfg)
 			Text = "",
 			AutoButtonColor = false,
 
-			ZIndex = 51
+			ZIndex = 25
 		})
 
-		Corner(LandButton, 12)
-		Stroke(LandButton, Theme.Stroke)
+		Corner(LandButton,12)
+		Stroke(LandButton,Theme.Stroke)
 
 		local LandLabel = New("TextLabel", {
 			Parent = LandButton,
+
 			BackgroundTransparency = 1,
 
 			Position = UDim2.fromOffset(14,0),
 			Size = UDim2.new(1,-28,1,0),
 
-			Font = Enum.Font.GothamMedium,
 			Text = name,
+			TextColor3 = Theme.TextDim,
 			TextSize = 14,
 
-			TextColor3 = Theme.TextDim,
+			Font = Enum.Font.GothamMedium,
 			TextXAlignment = Enum.TextXAlignment.Left,
 
-			ZIndex = 52
+			ZIndex = 26
 		})
 
-		--// PORTRAIT BUTTON
+		--// PORT BUTTON
 
 		local PortButton = New("TextButton", {
 			Parent = PortraitNav,
+
 			Size = UDim2.fromOffset(110,36),
 
 			BackgroundColor3 = Theme.Surface2,
@@ -367,24 +351,25 @@ function Library:CreateWindow(cfg)
 			Text = "",
 			AutoButtonColor = false,
 
-			ZIndex = 51
+			ZIndex = 25
 		})
 
-		Corner(PortButton, 12)
-		Stroke(PortButton, Theme.Stroke)
+		Corner(PortButton,12)
+		Stroke(PortButton,Theme.Stroke)
 
 		local PortLabel = New("TextLabel", {
 			Parent = PortButton,
+
 			BackgroundTransparency = 1,
 			Size = UDim2.fromScale(1,1),
 
-			Font = Enum.Font.GothamMedium,
 			Text = name,
+			TextColor3 = Theme.TextDim,
 			TextSize = 13,
 
-			TextColor3 = Theme.TextDim,
+			Font = Enum.Font.GothamMedium,
 
-			ZIndex = 52
+			ZIndex = 26
 		})
 
 		--// PAGE
@@ -399,49 +384,71 @@ function Library:CreateWindow(cfg)
 
 			Size = UDim2.fromScale(1,1),
 
-			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			CanvasSize = UDim2.fromOffset(0,0),
 
-			ScrollBarThickness = 4
-		})
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+			ScrollBarThickness = 4,
 
-		local Layout = New("UIListLayout", {
-			Parent = Page,
-			Padding = UDim.new(0,12)
+			ZIndex = 35
 		})
 
 		New("UIPadding", {
 			Parent = Page,
+
 			PaddingTop = UDim.new(0,4),
+			PaddingBottom = UDim.new(0,4),
 			PaddingLeft = UDim.new(0,4),
-			PaddingRight = UDim.new(0,4),
-			PaddingBottom = UDim.new(0,4)
+			PaddingRight = UDim.new(0,4)
 		})
 
-		Tab.Page = Page
+		New("UIListLayout", {
+			Parent = Page,
+
+			Padding = UDim.new(0,12),
+			SortOrder = Enum.SortOrder.LayoutOrder
+		})
 
 		local Data = {
-			Button = LandButton,
-			Label = LandLabel,
+			LandButton = LandButton,
+			LandLabel = LandLabel,
+
+			PortButton = PortButton,
+			PortLabel = PortLabel,
+
 			Page = Page
 		}
 
-		table.insert(Tabs, Data)
+		table.insert(Tabs,Data)
 
 		local function Click()
 
 			for _,t in pairs(Tabs) do
 
-				Tween(t.Button,{
+				Tween(t.LandButton,{
 					BackgroundColor3 = Theme.Surface2
 				},0.15)
 
-				Tween(t.Label,{
+				Tween(t.PortButton,{
+					BackgroundColor3 = Theme.Surface2
+				},0.15)
+
+				Tween(t.LandLabel,{
 					TextColor3 = Theme.TextDim
 				},0.15)
+
+				Tween(t.PortLabel,{
+					TextColor3 = Theme.TextDim
+				},0.15)
+
+				t.Page.Visible = false
 			end
 
 			Tween(LandButton,{
+				BackgroundColor3 = Theme.Accent
+			},0.15)
+
+			Tween(PortButton,{
 				BackgroundColor3 = Theme.Accent
 			},0.15)
 
@@ -449,17 +456,9 @@ function Library:CreateWindow(cfg)
 				TextColor3 = Color3.new(1,1,1)
 			},0.15)
 
-			Tween(PortButton,{
-				BackgroundColor3 = Theme.Accent
-			},0.15)
-
 			Tween(PortLabel,{
 				TextColor3 = Color3.new(1,1,1)
 			},0.15)
-
-			for _,t in pairs(Tabs) do
-				t.Page.Visible = false
-			end
 
 			Page.Visible = true
 		end
@@ -484,14 +483,17 @@ function Library:CreateWindow(cfg)
 				BorderSizePixel = 0,
 
 				AutomaticSize = Enum.AutomaticSize.Y,
-				Size = UDim2.new(1,-2,0,0)
+				Size = UDim2.new(1,-2,0,0),
+
+				ZIndex = 40
 			})
 
-			Corner(Holder, 16)
-			Stroke(Holder, Theme.Stroke)
+			Corner(Holder,16)
+			Stroke(Holder,Theme.Stroke)
 
 			New("UIPadding", {
 				Parent = Holder,
+
 				PaddingTop = UDim.new(0,14),
 				PaddingBottom = UDim.new(0,14),
 				PaddingLeft = UDim.new(0,14),
@@ -509,12 +511,14 @@ function Library:CreateWindow(cfg)
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1,0,0,20),
 
-				Font = Enum.Font.GothamBold,
 				Text = title,
+				TextColor3 = Theme.Text,
 				TextSize = 15,
 
-				TextColor3 = Theme.Text,
-				TextXAlignment = Enum.TextXAlignment.Left
+				Font = Enum.Font.GothamBold,
+				TextXAlignment = Enum.TextXAlignment.Left,
+
+				ZIndex = 41
 			})
 
 			--// BUTTON
@@ -535,7 +539,9 @@ function Library:CreateWindow(cfg)
 
 					Font = Enum.Font.GothamMedium,
 
-					AutoButtonColor = false
+					AutoButtonColor = false,
+
+					ZIndex = 42
 				})
 
 				Corner(Btn,12)
@@ -576,7 +582,9 @@ function Library:CreateWindow(cfg)
 					BorderSizePixel = 0,
 
 					Text = "",
-					AutoButtonColor = false
+					AutoButtonColor = false,
+
+					ZIndex = 42
 				})
 
 				Corner(Toggle,12)
@@ -586,6 +594,7 @@ function Library:CreateWindow(cfg)
 					Parent = Toggle,
 
 					BackgroundTransparency = 1,
+
 					Position = UDim2.fromOffset(14,0),
 					Size = UDim2.new(1,-90,1,0),
 
@@ -594,7 +603,9 @@ function Library:CreateWindow(cfg)
 					TextSize = 14,
 
 					Font = Enum.Font.GothamMedium,
-					TextXAlignment = Enum.TextXAlignment.Left
+					TextXAlignment = Enum.TextXAlignment.Left,
+
+					ZIndex = 43
 				})
 
 				local Switch = New("Frame", {
@@ -606,7 +617,9 @@ function Library:CreateWindow(cfg)
 					Size = UDim2.fromOffset(50,24),
 
 					BackgroundColor3 = Value and Theme.Accent or Color3.fromRGB(60,60,70),
-					BorderSizePixel = 0
+					BorderSizePixel = 0,
+
+					ZIndex = 44
 				})
 
 				Corner(Switch,999)
@@ -618,7 +631,9 @@ function Library:CreateWindow(cfg)
 					Position = Value and UDim2.fromOffset(28,3) or UDim2.fromOffset(3,3),
 
 					BackgroundColor3 = Color3.new(1,1,1),
-					BorderSizePixel = 0
+					BorderSizePixel = 0,
+
+					ZIndex = 45
 				})
 
 				Corner(Knob,999)
@@ -694,6 +709,22 @@ end)
 
 Core:Toggle("Auto Farm",false,function(v)
 	print(v)
+end)
+
+local VisualSection = Visuals:CreateSection("ESP")
+
+VisualSection:Toggle("Player ESP",false,function(v)
+	print(v)
+end)
+
+VisualSection:Button("Refresh ESP",function()
+	print("refresh")
+end)
+
+local SettingsSection = Settings:CreateSection("UI")
+
+SettingsSection:Button("Destroy UI",function()
+	game:GetService("CoreGui"):FindFirstChild("KilometresUIX"):Destroy()
 end)
 
 return Library
