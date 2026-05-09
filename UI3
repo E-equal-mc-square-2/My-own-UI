@@ -1,15 +1,7 @@
 --// ======================================================================
---// KILOMETRES UI X V3 FIXED
---// REAL MOBILE + LANDSCAPE REBUILD
---// FIXED:
---// ✅ Tabs Visible
---// ✅ Elements Visible
---// ✅ Proper ZIndex
---// ✅ Landscape Stable
---// ✅ Portrait Stable
---// ✅ Working Sections
---// ✅ Working Buttons
---// ✅ Working Toggles
+--// KILOMETRES UI X V4
+--// PREMIUM MOBILE FRAMEWORK
+--// BUILD: SETTINGS + HIDE SYSTEM
 --// ======================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -23,12 +15,14 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 local Camera = workspace.CurrentCamera
 
 --// ======================================================================
---// HELPERS
+--// SAFE PARENT
 --// ======================================================================
 
 local function SafeParent()
+
 	if gethui then
-		local ok, ui = pcall(gethui)
+		local ok,ui = pcall(gethui)
+
 		if ok and ui then
 			return ui
 		end
@@ -37,7 +31,12 @@ local function SafeParent()
 	return PlayerGui or CoreGui
 end
 
-local function New(class, props)
+--// ======================================================================
+--// HELPERS
+--// ======================================================================
+
+local function New(class,props)
+
 	local obj = Instance.new(class)
 
 	for i,v in pairs(props or {}) do
@@ -53,22 +52,25 @@ local function New(class, props)
 	return obj
 end
 
-local function Corner(obj, radius)
-	return New("UICorner", {
+local function Corner(obj,radius)
+
+	return New("UICorner",{
 		Parent = obj,
-		CornerRadius = UDim.new(0, radius or 14)
+		CornerRadius = UDim.new(0,radius or 14)
 	})
 end
 
-local function Stroke(obj, color)
-	return New("UIStroke", {
+local function Stroke(obj,color)
+
+	return New("UIStroke",{
 		Parent = obj,
 		Color = color,
 		Thickness = 1
 	})
 end
 
-local function Tween(obj, props, speed)
+local function Tween(obj,props,speed)
+
 	local tw = TweenService:Create(
 		obj,
 		TweenInfo.new(
@@ -80,6 +82,7 @@ local function Tween(obj, props, speed)
 	)
 
 	tw:Play()
+
 	return tw
 end
 
@@ -88,21 +91,69 @@ local function IsPortrait()
 end
 
 --// ======================================================================
---// THEME
+--// THEMES
 --// ======================================================================
 
-local Theme = {
-	Background = Color3.fromRGB(10,10,12),
-	Surface = Color3.fromRGB(17,17,23),
-	Surface2 = Color3.fromRGB(24,24,32),
+local Themes = {
 
-	Stroke = Color3.fromRGB(45,45,58),
+	Default = {
 
-	Text = Color3.fromRGB(255,255,255),
-	TextDim = Color3.fromRGB(170,170,180),
+		Background = Color3.fromRGB(10,10,12),
+		Surface = Color3.fromRGB(17,17,23),
+		Surface2 = Color3.fromRGB(24,24,32),
 
-	Accent = Color3.fromRGB(130,110,255),
+		Stroke = Color3.fromRGB(45,45,58),
+
+		Text = Color3.fromRGB(255,255,255),
+		TextDim = Color3.fromRGB(170,170,180),
+
+		Accent = Color3.fromRGB(130,110,255)
+	},
+
+	LiquidGlass = {
+
+		Background = Color3.fromRGB(18,18,24),
+		Surface = Color3.fromRGB(30,30,40),
+		Surface2 = Color3.fromRGB(45,45,60),
+
+		Stroke = Color3.fromRGB(90,90,110),
+
+		Text = Color3.fromRGB(255,255,255),
+		TextDim = Color3.fromRGB(190,190,210),
+
+		Accent = Color3.fromRGB(120,200,255)
+	},
+
+	CyberNeo = {
+
+		Background = Color3.fromRGB(5,5,8),
+		Surface = Color3.fromRGB(15,15,20),
+		Surface2 = Color3.fromRGB(20,20,28),
+
+		Stroke = Color3.fromRGB(0,255,255),
+
+		Text = Color3.fromRGB(255,255,255),
+		TextDim = Color3.fromRGB(120,220,255),
+
+		Accent = Color3.fromRGB(0,255,255)
+	},
+
+	Years3066 = {
+
+		Background = Color3.fromRGB(6,6,10),
+		Surface = Color3.fromRGB(18,18,28),
+		Surface2 = Color3.fromRGB(28,28,40),
+
+		Stroke = Color3.fromRGB(120,80,255),
+
+		Text = Color3.fromRGB(255,255,255),
+		TextDim = Color3.fromRGB(200,180,255),
+
+		Accent = Color3.fromRGB(140,80,255)
+	}
 }
+
+local Theme = Themes.Default
 
 --// ======================================================================
 --// LIBRARY
@@ -110,11 +161,20 @@ local Theme = {
 
 local Library = {}
 
+function Library:SetTheme(name)
+
+	if Themes[name] then
+		Theme = Themes[name]
+	end
+end
+
 function Library:CreateWindow(cfg)
 
 	cfg = cfg or {}
 
-	local Screen = New("ScreenGui", {
+	--// SCREEN
+
+	local Screen = New("ScreenGui",{
 		Name = "KilometresUIX",
 		Parent = SafeParent(),
 		IgnoreGuiInset = true,
@@ -122,16 +182,15 @@ function Library:CreateWindow(cfg)
 		ZIndexBehavior = Enum.ZIndexBehavior.Global
 	})
 
-	local Main = New("Frame", {
+	--// MAIN
+
+	local Main = New("Frame",{
 		Parent = Screen,
 
 		AnchorPoint = Vector2.new(0.5,0.5),
 		Position = UDim2.fromScale(0.5,0.5),
 
-		Size = UDim2.fromOffset(
-			math.min(Camera.ViewportSize.X - 20, 900),
-			math.min(Camera.ViewportSize.Y - 20, 620)
-		),
+		Size = UDim2.fromOffset(900,620),
 
 		BackgroundColor3 = Theme.Background,
 		BorderSizePixel = 0,
@@ -142,22 +201,116 @@ function Library:CreateWindow(cfg)
 	Corner(Main,20)
 	Stroke(Main,Theme.Stroke)
 
+	--// SCALE
+
+	local Scale = New("UIScale",{
+		Parent = Main,
+		Scale = 1
+	})
+
+	--// FLOATING BALL
+
+	local Orb = New("TextButton",{
+		Parent = Screen,
+
+		Visible = false,
+
+		AnchorPoint = Vector2.new(0.5,0.5),
+		Position = UDim2.new(0,120,0.5,0),
+
+		Size = UDim2.fromOffset(58,58),
+
+		BackgroundColor3 = Theme.Accent,
+		BorderSizePixel = 0,
+
+		Text = "◉",
+		TextColor3 = Color3.new(1,1,1),
+		TextSize = 22,
+
+		Font = Enum.Font.GothamBold,
+
+		ZIndex = 999
+	})
+
+	Corner(Orb,999)
+
+	--// DRAG ORB
+
+	do
+		local dragging = false
+		local dragStart
+		local startPos
+
+		Orb.InputBegan:Connect(function(input)
+
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+				dragging = true
+				dragStart = input.Position
+				startPos = Orb.Position
+			end
+		end)
+
+		UIS.InputChanged:Connect(function(input)
+
+			if dragging and (
+				input.UserInputType == Enum.UserInputType.MouseMovement
+				or input.UserInputType == Enum.UserInputType.Touch
+			) then
+
+				local delta = input.Position - dragStart
+
+				Orb.Position = UDim2.new(
+					startPos.X.Scale,
+					startPos.X.Offset + delta.X,
+
+					startPos.Y.Scale,
+					startPos.Y.Offset + delta.Y
+				)
+			end
+		end)
+
+		UIS.InputEnded:Connect(function(input)
+
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+				dragging = false
+			end
+		end)
+	end
+
+	--// RESTORE
+
+	Orb.MouseButton1Click:Connect(function()
+
+		Main.Visible = true
+		Orb.Visible = false
+
+		Tween(Main,{
+			Size = UDim2.fromOffset(900,620)
+		},0.2)
+	end)
+
 	--// TOPBAR
 
-	local Topbar = New("Frame", {
+	local Topbar = New("Frame",{
 		Parent = Main,
+
 		Size = UDim2.new(1,0,0,58),
+
 		BackgroundTransparency = 1,
 		ZIndex = 5
 	})
 
-	New("TextLabel", {
+	New("TextLabel",{
 		Parent = Topbar,
 
 		BackgroundTransparency = 1,
 
 		Position = UDim2.fromOffset(18,10),
-		Size = UDim2.new(1,-36,0,22),
+		Size = UDim2.new(1,-120,0,22),
 
 		Text = cfg.Title or "Kilometres UI X",
 		TextColor3 = Theme.Text,
@@ -169,15 +322,15 @@ function Library:CreateWindow(cfg)
 		ZIndex = 6
 	})
 
-	New("TextLabel", {
+	New("TextLabel",{
 		Parent = Topbar,
 
 		BackgroundTransparency = 1,
 
 		Position = UDim2.fromOffset(18,32),
-		Size = UDim2.new(1,-36,0,16),
+		Size = UDim2.new(1,-120,0,16),
 
-		Text = cfg.Subtitle or "Framework",
+		Text = cfg.Subtitle or "Premium Framework",
 		TextColor3 = Theme.TextDim,
 		TextSize = 12,
 
@@ -187,9 +340,208 @@ function Library:CreateWindow(cfg)
 		ZIndex = 6
 	})
 
+	--// HIDE BUTTON
+
+	local HideButton = New("TextButton",{
+		Parent = Topbar,
+
+		AnchorPoint = Vector2.new(1,0),
+		Position = UDim2.new(1,-18,0,12),
+
+		Size = UDim2.fromOffset(34,34),
+
+		BackgroundColor3 = Theme.Surface2,
+		BorderSizePixel = 0,
+
+		Text = "—",
+		TextSize = 18,
+		TextColor3 = Theme.Text,
+
+		Font = Enum.Font.GothamBold,
+
+		ZIndex = 10
+	})
+
+	Corner(HideButton,12)
+	Stroke(HideButton,Theme.Stroke)
+
+	--// SETTINGS BUTTON
+
+	local SettingsButton = New("TextButton",{
+		Parent = Topbar,
+
+		AnchorPoint = Vector2.new(1,0),
+		Position = UDim2.new(1,-58,0,12),
+
+		Size = UDim2.fromOffset(34,34),
+
+		BackgroundColor3 = Theme.Surface2,
+		BorderSizePixel = 0,
+
+		Text = "⚙",
+		TextSize = 16,
+		TextColor3 = Theme.Text,
+
+		Font = Enum.Font.GothamBold,
+
+		ZIndex = 10
+	})
+
+	Corner(SettingsButton,12)
+	Stroke(SettingsButton,Theme.Stroke)
+
+	--// SETTINGS PANEL
+
+	local SettingsPanel = New("Frame",{
+		Parent = Main,
+
+		Visible = false,
+
+		AnchorPoint = Vector2.new(1,0),
+		Position = UDim2.new(1,-10,0,68),
+
+		Size = UDim2.fromOffset(240,420),
+
+		BackgroundColor3 = Theme.Surface,
+		BorderSizePixel = 0,
+
+		ZIndex = 100
+	})
+
+	Corner(SettingsPanel,18)
+	Stroke(SettingsPanel,Theme.Stroke)
+
+	New("UIPadding",{
+		Parent = SettingsPanel,
+
+		PaddingTop = UDim.new(0,14),
+		PaddingBottom = UDim.new(0,14),
+		PaddingLeft = UDim.new(0,14),
+		PaddingRight = UDim.new(0,14)
+	})
+
+	New("UIListLayout",{
+		Parent = SettingsPanel,
+		Padding = UDim.new(0,10)
+	})
+
+	local function SettingButton(text,callback)
+
+		local Btn = New("TextButton",{
+			Parent = SettingsPanel,
+
+			Size = UDim2.new(1,0,0,42),
+
+			BackgroundColor3 = Theme.Surface2,
+			BorderSizePixel = 0,
+
+			Text = text,
+			TextColor3 = Theme.Text,
+			TextSize = 14,
+
+			Font = Enum.Font.GothamMedium,
+
+			ZIndex = 101
+		})
+
+		Corner(Btn,12)
+		Stroke(Btn,Theme.Stroke)
+
+		Btn.MouseButton1Click:Connect(function()
+
+			if callback then
+				callback()
+			end
+		end)
+
+		return Btn
+	end
+
+	--// SETTINGS FEATURES
+
+	SettingButton("Theme: Default",function()
+
+		Library:SetTheme("Default")
+
+		Main.BackgroundColor3 = Theme.Background
+	end)
+
+	SettingButton("Theme: Liquid Glass",function()
+
+		Library:SetTheme("LiquidGlass")
+
+		Main.BackgroundColor3 = Theme.Background
+	end)
+
+	SettingButton("Theme: Cyber Neo",function()
+
+		Library:SetTheme("CyberNeo")
+
+		Main.BackgroundColor3 = Theme.Background
+	end)
+
+	SettingButton("Theme: 3066 Years",function()
+
+		Library:SetTheme("Years3066")
+
+		Main.BackgroundColor3 = Theme.Background
+	end)
+
+	SettingButton("UI Scale 0.8",function()
+
+		Tween(Scale,{
+			Scale = 0.8
+		},0.2)
+	end)
+
+	SettingButton("UI Scale 1.0",function()
+
+		Tween(Scale,{
+			Scale = 1
+		},0.2)
+	end)
+
+	SettingButton("UI Scale 1.2",function()
+
+		Tween(Scale,{
+			Scale = 1.2
+		},0.2)
+	end)
+
+	SettingButton("Width +100",function()
+
+		Main.Size = Main.Size + UDim2.fromOffset(100,0)
+	end)
+
+	SettingButton("Height +100",function()
+
+		Main.Size = Main.Size + UDim2.fromOffset(0,100)
+	end)
+
+	--// OPEN SETTINGS
+
+	SettingsButton.MouseButton1Click:Connect(function()
+
+		SettingsPanel.Visible = not SettingsPanel.Visible
+	end)
+
+	--// HIDE
+
+	HideButton.MouseButton1Click:Connect(function()
+
+		Tween(Main,{
+			Size = UDim2.fromOffset(0,0)
+		},0.2)
+
+		task.wait(0.2)
+
+		Main.Visible = false
+		Orb.Visible = true
+	end)
+
 	--// NAVIGATION
 
-	local LandscapeNav = New("Frame", {
+	local LandscapeNav = New("Frame",{
 		Parent = Main,
 
 		BackgroundColor3 = Theme.Surface,
@@ -201,7 +553,7 @@ function Library:CreateWindow(cfg)
 	Corner(LandscapeNav,18)
 	Stroke(LandscapeNav,Theme.Stroke)
 
-	New("UIPadding", {
+	New("UIPadding",{
 		Parent = LandscapeNav,
 
 		PaddingTop = UDim.new(0,12),
@@ -210,46 +562,17 @@ function Library:CreateWindow(cfg)
 		PaddingRight = UDim.new(0,12)
 	})
 
-	New("UIListLayout", {
+	New("UIListLayout",{
 		Parent = LandscapeNav,
 
-		Padding = UDim.new(0,8),
-		SortOrder = Enum.SortOrder.LayoutOrder
-	})
-
-	local PortraitNav = New("Frame", {
-		Parent = Main,
-
-		BackgroundColor3 = Theme.Surface,
-		BorderSizePixel = 0,
-
-		Visible = false,
-
-		ZIndex = 20
-	})
-
-	Corner(PortraitNav,18)
-	Stroke(PortraitNav,Theme.Stroke)
-
-	New("UIPadding", {
-		Parent = PortraitNav,
-
-		PaddingLeft = UDim.new(0,10),
-		PaddingRight = UDim.new(0,10)
-	})
-
-	New("UIListLayout", {
-		Parent = PortraitNav,
-
-		Padding = UDim.new(0,8),
-		FillDirection = Enum.FillDirection.Horizontal,
-		SortOrder = Enum.SortOrder.LayoutOrder
+		Padding = UDim.new(0,8)
 	})
 
 	--// PAGE HOLDER
 
-	local PageHolder = New("Frame", {
+	local PageHolder = New("Frame",{
 		Parent = Main,
+
 		BackgroundTransparency = 1,
 		ZIndex = 30
 	})
@@ -260,38 +583,16 @@ function Library:CreateWindow(cfg)
 
 		RunService.Heartbeat:Wait()
 
-		local portrait = IsPortrait()
+		Main.Position = UDim2.fromScale(0.5,0.5)
 
-		Main.Size = UDim2.fromOffset(
-			math.min(Camera.ViewportSize.X - 20, 900),
-			math.min(Camera.ViewportSize.Y - 20, 620)
-		)
+		LandscapeNav.Position = UDim2.new(0,12,0,68)
+		LandscapeNav.Size = UDim2.new(0,220,1,-80)
 
-		if portrait then
-
-			LandscapeNav.Visible = false
-			PortraitNav.Visible = true
-
-			PortraitNav.Position = UDim2.new(0,10,0,68)
-			PortraitNav.Size = UDim2.new(1,-20,0,54)
-
-			PageHolder.Position = UDim2.new(0,10,0,132)
-			PageHolder.Size = UDim2.new(1,-20,1,-142)
-
-		else
-
-			LandscapeNav.Visible = true
-			PortraitNav.Visible = false
-
-			LandscapeNav.Position = UDim2.new(0,12,0,68)
-			LandscapeNav.Size = UDim2.new(0,220,1,-80)
-
-			PageHolder.Position = UDim2.new(0,244,0,68)
-			PageHolder.Size = UDim2.new(1,-256,1,-80)
-		end
+		PageHolder.Position = UDim2.new(0,244,0,68)
+		PageHolder.Size = UDim2.new(1,-256,1,-80)
 	end
 
-	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateLayout)
+	UpdateLayout()
 
 	--// TABS
 
@@ -301,9 +602,7 @@ function Library:CreateWindow(cfg)
 
 		local Tab = {}
 
-		--// LAND BUTTON
-
-		local LandButton = New("TextButton", {
+		local Button = New("TextButton",{
 			Parent = LandscapeNav,
 
 			Size = UDim2.new(1,0,0,42),
@@ -317,11 +616,11 @@ function Library:CreateWindow(cfg)
 			ZIndex = 25
 		})
 
-		Corner(LandButton,12)
-		Stroke(LandButton,Theme.Stroke)
+		Corner(Button,12)
+		Stroke(Button,Theme.Stroke)
 
-		local LandLabel = New("TextLabel", {
-			Parent = LandButton,
+		local Label = New("TextLabel",{
+			Parent = Button,
 
 			BackgroundTransparency = 1,
 
@@ -338,43 +637,7 @@ function Library:CreateWindow(cfg)
 			ZIndex = 26
 		})
 
-		--// PORT BUTTON
-
-		local PortButton = New("TextButton", {
-			Parent = PortraitNav,
-
-			Size = UDim2.fromOffset(110,36),
-
-			BackgroundColor3 = Theme.Surface2,
-			BorderSizePixel = 0,
-
-			Text = "",
-			AutoButtonColor = false,
-
-			ZIndex = 25
-		})
-
-		Corner(PortButton,12)
-		Stroke(PortButton,Theme.Stroke)
-
-		local PortLabel = New("TextLabel", {
-			Parent = PortButton,
-
-			BackgroundTransparency = 1,
-			Size = UDim2.fromScale(1,1),
-
-			Text = name,
-			TextColor3 = Theme.TextDim,
-			TextSize = 13,
-
-			Font = Enum.Font.GothamMedium,
-
-			ZIndex = 26
-		})
-
-		--// PAGE
-
-		local Page = New("ScrollingFrame", {
+		local Page = New("ScrollingFrame",{
 			Parent = PageHolder,
 
 			Visible = false,
@@ -387,13 +650,12 @@ function Library:CreateWindow(cfg)
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			CanvasSize = UDim2.fromOffset(0,0),
 
-			ScrollingDirection = Enum.ScrollingDirection.Y,
 			ScrollBarThickness = 4,
 
 			ZIndex = 35
 		})
 
-		New("UIPadding", {
+		New("UIPadding",{
 			Parent = Page,
 
 			PaddingTop = UDim.new(0,4),
@@ -402,72 +664,47 @@ function Library:CreateWindow(cfg)
 			PaddingRight = UDim.new(0,4)
 		})
 
-		New("UIListLayout", {
+		New("UIListLayout",{
 			Parent = Page,
-
-			Padding = UDim.new(0,12),
-			SortOrder = Enum.SortOrder.LayoutOrder
+			Padding = UDim.new(0,12)
 		})
 
-		local Data = {
-			LandButton = LandButton,
-			LandLabel = LandLabel,
-
-			PortButton = PortButton,
-			PortLabel = PortLabel,
-
+		table.insert(Tabs,{
+			Button = Button,
+			Label = Label,
 			Page = Page
-		}
+		})
 
-		table.insert(Tabs,Data)
-
-		local function Click()
+		local function Select()
 
 			for _,t in pairs(Tabs) do
 
-				Tween(t.LandButton,{
-					BackgroundColor3 = Theme.Surface2
-				},0.15)
-
-				Tween(t.PortButton,{
-					BackgroundColor3 = Theme.Surface2
-				},0.15)
-
-				Tween(t.LandLabel,{
-					TextColor3 = Theme.TextDim
-				},0.15)
-
-				Tween(t.PortLabel,{
-					TextColor3 = Theme.TextDim
-				},0.15)
-
 				t.Page.Visible = false
+
+				Tween(t.Button,{
+					BackgroundColor3 = Theme.Surface2
+				},0.15)
+
+				Tween(t.Label,{
+					TextColor3 = Theme.TextDim
+				},0.15)
 			end
 
-			Tween(LandButton,{
-				BackgroundColor3 = Theme.Accent
-			},0.15)
-
-			Tween(PortButton,{
-				BackgroundColor3 = Theme.Accent
-			},0.15)
-
-			Tween(LandLabel,{
-				TextColor3 = Color3.new(1,1,1)
-			},0.15)
-
-			Tween(PortLabel,{
-				TextColor3 = Color3.new(1,1,1)
-			},0.15)
-
 			Page.Visible = true
+
+			Tween(Button,{
+				BackgroundColor3 = Theme.Accent
+			},0.15)
+
+			Tween(Label,{
+				TextColor3 = Color3.new(1,1,1)
+			},0.15)
 		end
 
-		LandButton.MouseButton1Click:Connect(Click)
-		PortButton.MouseButton1Click:Connect(Click)
+		Button.MouseButton1Click:Connect(Select)
 
 		if #Tabs == 1 then
-			task.defer(Click)
+			task.defer(Select)
 		end
 
 		--// SECTION
@@ -476,7 +713,7 @@ function Library:CreateWindow(cfg)
 
 			local Section = {}
 
-			local Holder = New("Frame", {
+			local Holder = New("Frame",{
 				Parent = Page,
 
 				BackgroundColor3 = Theme.Surface,
@@ -491,7 +728,7 @@ function Library:CreateWindow(cfg)
 			Corner(Holder,16)
 			Stroke(Holder,Theme.Stroke)
 
-			New("UIPadding", {
+			New("UIPadding",{
 				Parent = Holder,
 
 				PaddingTop = UDim.new(0,14),
@@ -500,12 +737,12 @@ function Library:CreateWindow(cfg)
 				PaddingRight = UDim.new(0,14)
 			})
 
-			New("UIListLayout", {
+			New("UIListLayout",{
 				Parent = Holder,
 				Padding = UDim.new(0,10)
 			})
 
-			New("TextLabel", {
+			New("TextLabel",{
 				Parent = Holder,
 
 				BackgroundTransparency = 1,
@@ -516,16 +753,14 @@ function Library:CreateWindow(cfg)
 				TextSize = 15,
 
 				Font = Enum.Font.GothamBold,
-				TextXAlignment = Enum.TextXAlignment.Left,
-
-				ZIndex = 41
+				TextXAlignment = Enum.TextXAlignment.Left
 			})
 
 			--// BUTTON
 
 			function Section:Button(text,callback)
 
-				local Btn = New("TextButton", {
+				local Btn = New("TextButton",{
 					Parent = Holder,
 
 					Size = UDim2.new(1,0,0,44),
@@ -539,25 +774,13 @@ function Library:CreateWindow(cfg)
 
 					Font = Enum.Font.GothamMedium,
 
-					AutoButtonColor = false,
-
-					ZIndex = 42
+					AutoButtonColor = false
 				})
 
 				Corner(Btn,12)
 				Stroke(Btn,Theme.Stroke)
 
 				Btn.MouseButton1Click:Connect(function()
-
-					Tween(Btn,{
-						Size = UDim2.new(1,0,0,40)
-					},0.08)
-
-					task.wait(0.08)
-
-					Tween(Btn,{
-						Size = UDim2.new(1,0,0,44)
-					},0.08)
 
 					if callback then
 						callback()
@@ -573,7 +796,7 @@ function Library:CreateWindow(cfg)
 
 				local Value = default or false
 
-				local Toggle = New("TextButton", {
+				local Toggle = New("TextButton",{
 					Parent = Holder,
 
 					Size = UDim2.new(1,0,0,50),
@@ -581,16 +804,13 @@ function Library:CreateWindow(cfg)
 					BackgroundColor3 = Theme.Surface2,
 					BorderSizePixel = 0,
 
-					Text = "",
-					AutoButtonColor = false,
-
-					ZIndex = 42
+					Text = ""
 				})
 
 				Corner(Toggle,12)
 				Stroke(Toggle,Theme.Stroke)
 
-				New("TextLabel", {
+				New("TextLabel",{
 					Parent = Toggle,
 
 					BackgroundTransparency = 1,
@@ -603,12 +823,10 @@ function Library:CreateWindow(cfg)
 					TextSize = 14,
 
 					Font = Enum.Font.GothamMedium,
-					TextXAlignment = Enum.TextXAlignment.Left,
-
-					ZIndex = 43
+					TextXAlignment = Enum.TextXAlignment.Left
 				})
 
-				local Switch = New("Frame", {
+				local Switch = New("Frame",{
 					Parent = Toggle,
 
 					AnchorPoint = Vector2.new(1,0.5),
@@ -617,23 +835,19 @@ function Library:CreateWindow(cfg)
 					Size = UDim2.fromOffset(50,24),
 
 					BackgroundColor3 = Value and Theme.Accent or Color3.fromRGB(60,60,70),
-					BorderSizePixel = 0,
-
-					ZIndex = 44
+					BorderSizePixel = 0
 				})
 
 				Corner(Switch,999)
 
-				local Knob = New("Frame", {
+				local Knob = New("Frame",{
 					Parent = Switch,
 
 					Size = UDim2.fromOffset(18,18),
 					Position = Value and UDim2.fromOffset(28,3) or UDim2.fromOffset(3,3),
 
 					BackgroundColor3 = Color3.new(1,1,1),
-					BorderSizePixel = 0,
-
-					ZIndex = 45
+					BorderSizePixel = 0
 				})
 
 				Corner(Knob,999)
@@ -683,8 +897,6 @@ function Library:CreateWindow(cfg)
 		return Tab
 	end
 
-	UpdateLayout()
-
 	return Library
 end
 
@@ -694,7 +906,7 @@ end
 
 local Window = Library:CreateWindow({
 	Title = "Kilometres UI X",
-	Subtitle = "REAL Landscape + Portrait"
+	Subtitle = "PREMIUM MOBILE FRAMEWORK"
 })
 
 local Main = Library:CreateTab("Main")
@@ -704,27 +916,32 @@ local Settings = Library:CreateTab("Settings")
 local Core = Main:CreateSection("Core")
 
 Core:Button("Notification",function()
-	print("Clicked")
+	print("clicked")
 end)
 
 Core:Toggle("Auto Farm",false,function(v)
 	print(v)
 end)
 
-local VisualSection = Visuals:CreateSection("ESP")
+local ESP = Visuals:CreateSection("ESP")
 
-VisualSection:Toggle("Player ESP",false,function(v)
+ESP:Toggle("Player ESP",false,function(v)
 	print(v)
 end)
 
-VisualSection:Button("Refresh ESP",function()
+ESP:Button("Refresh ESP",function()
 	print("refresh")
 end)
 
-local SettingsSection = Settings:CreateSection("UI")
+local Misc = Settings:CreateSection("UI")
 
-SettingsSection:Button("Destroy UI",function()
-	game:GetService("CoreGui"):FindFirstChild("KilometresUIX"):Destroy()
+Misc:Button("Destroy UI",function()
+
+	local gui = CoreGui:FindFirstChild("KilometresUIX")
+
+	if gui then
+		gui:Destroy()
+	end
 end)
 
 return Library
