@@ -1,263 +1,208 @@
---// =========================================================
---// KilometresUI X — FULL EXAMPLE FOR UI3
---// Simple showcase using all elements
---// =========================================================
+local Library = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"
+))()
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
+--// WINDOW
 
 local Window = Library:CreateWindow({
-    Title = "Kilometres UI X",
-    Subtitle = "UI3 Example",
-    Theme = "Nebula"
+    Title = "Kilometres UI X1",
+    Subtitle = "UI3 Full Example"
 })
 
---// =========================================================
+--// TABS
+
+local Main = Library:CreateTab("Main")
+local Visuals = Library:CreateTab("Visuals")
+local Player = Library:CreateTab("Player")
+local Misc = Library:CreateTab("Misc")
+local Settings = Library:CreateTab("Settings")
+
+--// =====================================================================
 --// MAIN TAB
---// =========================================================
+--// =====================================================================
 
-local MainTab = Window:CreateTab({
-    Name = "Main"
-})
+local Farming = Main:CreateSection("Farming")
 
-local MainSection = MainTab:CreateSection({
-    Name = "Main Controls",
-    Description = "Basic UI elements showcase"
-})
+Farming:Button("Collect Coins", function()
+    print("Collected coins")
+end)
 
-MainSection:CreateLabel("Welcome to Kilometres UI X")
+Farming:Button("Open Crate", function()
+    print("Crate opened")
+end)
 
-MainSection:CreateParagraph(
-    "This example demonstrates all UI3 elements including buttons, toggles, sliders, dropdowns, textboxes, and keybinds."
-)
+Farming:Toggle("Auto Farm", false, function(v)
+    print("Auto Farm:", v)
+end)
 
-MainSection:CreateButton({
-    Name = "Show Notification",
-    Description = "Simple button example",
-    Callback = function()
-        Library:Notify({
-            Title = "KilometresUI",
-            Content = "Button clicked successfully!",
-            Duration = 4
-        })
-    end
-})
+Farming:Toggle("Auto Rebirth", false, function(v)
+    print("Auto Rebirth:", v)
+end)
 
-MainSection:CreateToggle({
-    Name = "Auto Farm",
-    Description = "Toggle example",
-    Default = false,
-    Flag = "AutoFarm",
-    Callback = function(v)
-        print("Auto Farm:", v)
-    end
-})
+local Combat = Main:CreateSection("Combat")
 
-MainSection:CreateSlider({
-    Name = "WalkSpeed",
-    Min = 16,
-    Max = 200,
-    Increment = 1,
-    Default = 16,
-    Flag = "WalkSpeed",
-    Callback = function(v)
-        print("WalkSpeed:", v)
+Combat:Button("Kill Aura", function()
+    print("Aura activated")
+end)
 
-        pcall(function()
-            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-        end)
-    end
-})
+Combat:Toggle("Silent Aim", false, function(v)
+    print("Silent Aim:", v)
+end)
 
-MainSection:CreateDropdown({
-    Name = "Select Mode",
-    Options = {
-        "Legit",
-        "Rage",
-        "Balanced",
-        "Custom"
-    },
-    Default = "Balanced",
-    Flag = "Mode",
-    Callback = function(v)
-        print("Selected:", v)
-    end
-})
+Combat:Toggle("Auto Attack", false, function(v)
+    print("Auto Attack:", v)
+end)
 
-MainSection:CreateTextbox({
-    Name = "Player Name",
-    Placeholder = "Type username...",
-    Default = "",
-    Flag = "PlayerName",
-    Callback = function(v)
-        print("Textbox:", v)
-    end
-})
-
-MainSection:CreateKeybind({
-    Name = "Open Menu",
-    Default = Enum.KeyCode.RightShift,
-    Flag = "MenuBind",
-    Callback = function()
-        print("Keybind Pressed")
-    end
-})
-
---// =========================================================
+--// =====================================================================
 --// VISUALS TAB
---// =========================================================
+--// =====================================================================
 
-local VisualsTab = Window:CreateTab({
-    Name = "Visuals"
-})
+local ESP = Visuals:CreateSection("ESP")
 
-local VisualsSection = VisualsTab:CreateSection({
-    Name = "Visual Settings",
-    Description = "Visual controls"
-})
+ESP:Toggle("Player ESP", false, function(v)
+    print("Player ESP:", v)
+end)
 
-VisualsSection:CreateToggle({
-    Name = "ESP",
-    Default = true,
-    Flag = "ESP",
-    Callback = function(v)
-        print("ESP:", v)
-    end
-})
+ESP:Toggle("Box ESP", false, function(v)
+    print("Box ESP:", v)
+end)
 
-VisualsSection:CreateToggle({
-    Name = "Chams",
-    Default = false,
-    Flag = "Chams",
-    Callback = function(v)
-        print("Chams:", v)
-    end
-})
+ESP:Toggle("Name ESP", false, function(v)
+    print("Name ESP:", v)
+end)
 
-VisualsSection:CreateSlider({
-    Name = "Brightness",
-    Min = 0,
-    Max = 100,
-    Increment = 1,
-    Default = 50,
-    Flag = "Brightness",
-    Callback = function(v)
-        print("Brightness:", v)
-    end
-})
+ESP:Toggle("Health ESP", false, function(v)
+    print("Health ESP:", v)
+end)
 
-VisualsSection:CreateDropdown({
-    Name = "ESP Color",
-    Options = {
-        "Red",
-        "Blue",
-        "Green",
-        "Purple",
-        "Rainbow"
-    },
-    Default = "Purple",
-    Flag = "ESPColor",
-    Callback = function(v)
-        print("ESP Color:", v)
-    end
-})
+local World = Visuals:CreateSection("World")
 
---// =========================================================
+World:Button("Full Bright", function()
+    game:GetService("Lighting").Brightness = 5
+end)
+
+World:Button("Remove Fog", function()
+    game:GetService("Lighting").FogEnd = 100000
+end)
+
+World:Toggle("Rainbow World", false, function(v)
+    print("Rainbow World:", v)
+end)
+
+--// =====================================================================
+--// PLAYER TAB
+--// =====================================================================
+
+local Character = Player:CreateSection("Character")
+
+Character:Button("Reset Character", function()
+    game.Players.LocalPlayer.Character:BreakJoints()
+end)
+
+Character:Toggle("Infinite Jump", false, function(v)
+    print("Infinite Jump:", v)
+end)
+
+Character:Toggle("Noclip", false, function(v)
+    print("Noclip:", v)
+end)
+
+Character:Toggle("Fly", false, function(v)
+    print("Fly:", v)
+end)
+
+local Movement = Player:CreateSection("Movement")
+
+Movement:Button("Speed x2", function()
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 32
+end)
+
+Movement:Button("JumpPower x2", function()
+    game.Players.LocalPlayer.Character.Humanoid.JumpPower = 100
+end)
+
+Movement:Toggle("Sprint", false, function(v)
+    print("Sprint:", v)
+end)
+
+--// =====================================================================
+--// MISC TAB
+--// =====================================================================
+
+local Fun = Misc:CreateSection("Fun")
+
+Fun:Button("Dance", function()
+    print("Dance animation")
+end)
+
+Fun:Button("Play Sound", function()
+    print("Sound played")
+end)
+
+Fun:Toggle("Spam Chat", false, function(v)
+    print("Spam Chat:", v)
+end)
+
+Fun:Toggle("Annoy Mode", false, function(v)
+    print("Annoy Mode:", v)
+end)
+
+local Server = Misc:CreateSection("Server")
+
+Server:Button("Rejoin Server", function()
+    game:GetService("TeleportService"):Teleport(
+        game.PlaceId,
+        game.Players.LocalPlayer
+    )
+end)
+
+Server:Button("Copy JobId", function()
+    setclipboard(game.JobId)
+end)
+
+Server:Toggle("Auto Rejoin", false, function(v)
+    print("Auto Rejoin:", v)
+end)
+
+--// =====================================================================
 --// SETTINGS TAB
---// =========================================================
+--// =====================================================================
 
-local SettingsTab = Window:CreateTab({
-    Name = "Settings"
-})
+local UI = Settings:CreateSection("UI")
 
-local ThemeSection = SettingsTab:CreateSection({
-    Name = "Themes",
-    Description = "Change UI themes"
-})
+UI:Button("Destroy UI", function()
 
-ThemeSection:CreateDropdown({
-    Name = "Theme",
-    Options = {
-        "Nebula",
-        "Phantom",
-        "Eclipse",
-        "Quantum",
-        "Nova"
-    },
-    Default = "Nebula",
-    Flag = "Theme",
-    Callback = function(v)
-        Library:SetTheme(v)
+    local gui = game.CoreGui:FindFirstChild("KilometresUIX")
 
-        Library:Notify({
-            Title = "Theme Changed",
-            Content = "Current theme: " .. v,
-            Duration = 3
-        })
+    if gui then
+        gui:Destroy()
     end
-})
+end)
 
-local ConfigSection = SettingsTab:CreateSection({
-    Name = "Configs",
-    Description = "Save & load configs"
-})
+UI:Button("Print Theme", function()
+    print("Theme Loaded")
+end)
 
-ConfigSection:CreateButton({
-    Name = "Save Config",
-    Callback = function()
-        local ok = Library:SaveConfig("MyConfig")
+UI:Toggle("Blur Background", false, function(v)
+    print("Blur:", v)
+end)
 
-        Library:Notify({
-            Title = "Config",
-            Content = ok and "Config saved!" or "Executor unsupported.",
-            Duration = 3
-        })
-    end
-})
+UI:Toggle("Notifications", true, function(v)
+    print("Notifications:", v)
+end)
 
-ConfigSection:CreateButton({
-    Name = "Load Config",
-    Callback = function()
-        local ok = Library:LoadConfig("MyConfig")
+--// =====================================================================
+--// EXTRA DEMO
+--// =====================================================================
 
-        Library:Notify({
-            Title = "Config",
-            Content = ok and "Config loaded!" or "Config not found.",
-            Duration = 3
-        })
-    end
-})
+local Extra = Settings:CreateSection("Extra")
 
-ConfigSection:CreateButton({
-    Name = "Destroy UI",
-    Callback = function()
-        Window:Destroy()
-    end
-})
+for i = 1, 10 do
 
---// =========================================================
---// COMMAND PALETTE EXAMPLES
---// =========================================================
+    Extra:Button("Extra Button "..i, function()
+        print("Clicked:", i)
+    end)
 
-Window:RegisterCommand("Print Hello", function()
-    print("Hello from command palette!")
-end, "Examples")
+end
 
-Window:RegisterCommand("Notification Test", function()
-    Library:Notify({
-        Title = "Command Palette",
-        Content = "You executed a command!",
-        Duration = 3
-    })
-end, "Examples")
-
---// =========================================================
---// STARTUP NOTIFICATION
---// =========================================================
-
-Library:Notify({
-    Title = "KilometresUI X",
-    Content = "UI3 loaded successfully!",
-    Duration = 5
-})
-
-print("KilometresUI X Example Loaded")
+print("Kilometres UI Example Loaded")
