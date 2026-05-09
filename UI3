@@ -1,578 +1,1099 @@
---// KilometresUI V6
---// Modern Dashboard UI Framework
---// Single File Architecture
---// Inspired by Rayfield + Fluent + Dashboard Systems
---// Mobile Optimized + Executor Friendly
---// By ChatGPT for Kilometres
+--[[
+NeumoUI (Roblox) - retained-mode UI micro-framework
+- Instance/node API (widgets create Instances once, update via props/state)
+- Neumorphism theme (light/dark tokens) with auto dark mode hook
+- Core widgets: Frame, Label, Button, TextBox, ScrollingFrame, List
+- Clean destroy + event helpers
 
---// SERVICES
+Usage (LocalScript):
+    local UI = require(path.to.UI.Library)
 
+    local app = UI.new({
+        Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui"),
+        Name = "DemoUI",
+        Theme = { Mode = "auto" }, -- "auto" | "light" | "dark"
+    })
+
+    local window = app:Frame({
+        Name = "Window",
+        AnchorPoint = Vector2.new(0.5,0.5),
+        Position = UDim2.fromScale(0.5,0.5),
+        Size = UDim2.fromOffset(420, 260),
+    })
+
+    window:Label({ Text = "Hello", TextSize = 18, Position = UDim2.fromOffset(20,18), Size = UDim2.fromOffset(380, 24) })
+
+    window:Button({
+        Text = "Click me",
+        Position = UDim2.fromOffset(20, 60),
+        Size = UDim2.fromOffset(160, 44),
+        OnClick = function() print("clicked") end,
+    })
+
+    window:TextBox({
+        PlaceholderText = "Type here...",
+        Position = UDim2.fromOffset(20, 118),
+        Size = UDim2.fromOffset(320, 44),
+        OnSubmit = function(text) print("submitted:", text) end,
+    })
+
+--]]
+
+local UI = {}
+
+-- Roblox globals (for Luau)
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local HttpService = game:GetService("HttpService")
-local Lighting = game:GetService("Lighting")
+local TextService = game:GetService("TextService")
 
-local LocalPlayer = Players.LocalPlayer
+-- ----------------------------
+-- Utilities
+-- ----------------------------
 
---// ROOT
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KilometresUI_V6"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-pcall(function()
-    ScreenGui.Parent = CoreGui
-end)
-
---// BLUR
-
-local Blur = Lighting:FindFirstChild("KilometresBlur")
-if not Blur then
-    Blur = Instance.new("BlurEffect")
-    Blur.Name = "KilometresBlur"
-    Blur.Size = 0
-    Blur.Parent = Lighting
+local function isInstance(x)
+	return typeof(x) == "Instance"
 end
 
-TweenService:Create(
-    Blur,
-    TweenInfo.new(0.4, Enum.EasingStyle.Quint),
-    {Size = 18}
-):Play()
-
---// CONFIG
-
-local Config = {
-    Theme = "Blueprint",
-    Blur = true,
-    FPS = true,
-    Ping = true,
-    Compact = false,
-}
-
---// THEMES
-
-local Themes = {
-    Blueprint = {
-        Accent = Color3.fromRGB(0,170,255),
-        Background = Color3.fromRGB(16,18,24),
-        Light = Color3.fromRGB(28,32,40),
-        Stroke = Color3.fromRGB(70,90,120),
-        Text = Color3.fromRGB(255,255,255),
-    },
-
-    Crimson = {
-        Accent = Color3.fromRGB(255,70,70),
-        Background = Color3.fromRGB(20,16,16),
-        Light = Color3.fromRGB(40,24,24),
-        Stroke = Color3.fromRGB(100,40,40),
-        Text = Color3.fromRGB(255,255,255),
-    },
-
-    AMOLED = {
-        Accent = Color3.fromRGB(255,255,255),
-        Background = Color3.fromRGB(0,0,0),
-        Light = Color3.fromRGB(15,15,15),
-        Stroke = Color3.fromRGB(40,40,40),
-        Text = Color3.fromRGB(255,255,255),
-    }
-}
-
-local Theme = Themes[Config.Theme]
-
---// UTIL
-
-local function Tween(obj, props, time)
-    TweenService:Create(
-        obj,
-        TweenInfo.new(
-            time or 0.25,
-            Enum.EasingStyle.Quint,
-            Enum.EasingDirection.Out
-        ),
-        props
-    ):Play()
+local function clamp(n, a, b)
+	if n < a then return a end
+	if n > b then return b end
+	return n
 end
 
-local function Round(obj, radius)
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0,radius)
-    c.Parent = obj
+local function deepCopy(t, seen)
+	if type(t) ~= "table" then return t end
+	seen = seen or {}
+	if seen[t] then return seen[t] end
+	local out = {}
+	seen[t] = out
+	for k,v in pairs(t) do
+		out[k] = deepCopy(v, seen)
+	end
+	return out
 end
 
-local function Stroke(obj, color)
-    local s = Instance.new("UIStroke")
-    s.Color = color
-    s.Thickness = 1
-    s.Transparency = 0.3
-    s.Parent = obj
+local function joinPath(...)
+	local parts = {...}
+	local s = ""
+	for i=1,#parts do
+		if parts[i] ~= nil and parts[i] ~= "" then
+			if s ~= "" then s ..="/" end
+			s ..= tostring(parts[i])
+		end
+	end
+	return s
 end
 
-local function Dragify(frame)
-    local dragToggle = nil
-    local dragInput = nil
-    local dragStart = nil
-    local startPos = nil
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragToggle = true
-            dragStart = input.Position
-            startPos = frame.Position
-
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragToggle = false
-                end
-            end)
-        end
-    end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-
-    UIS.InputChanged:Connect(function(input)
-        if input == dragInput and dragToggle then
-            update(input)
-        end
-    end)
+local function safeCall(fn, ...)
+	if type(fn) == "function" then
+		local ok, err = pcall(fn, ...)
+		if not ok then
+			warn("[NeumoUI] callback error:", err)
+		end
+	end
 end
 
---// MAIN WINDOW
-
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0,760,0,500)
-Main.Position = UDim2.new(0.5,-380,0.5,-250)
-Main.BackgroundColor3 = Theme.Background
-Main.Parent = ScreenGui
-Round(Main,18)
-Stroke(Main,Theme.Stroke)
-Dragify(Main)
-
---// SHADOW
-
-local Shadow = Instance.new("ImageLabel")
-Shadow.Size = UDim2.new(1,60,1,60)
-Shadow.Position = UDim2.new(0,-30,0,-30)
-Shadow.BackgroundTransparency = 1
-Shadow.Image = "rbxassetid://1316045217"
-Shadow.ImageTransparency = 0.7
-Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(10,10,118,118)
-Shadow.ZIndex = 0
-Shadow.Parent = Main
-
---// TOPBAR
-
-local Topbar = Instance.new("Frame")
-Topbar.Size = UDim2.new(1,0,0,54)
-Topbar.BackgroundTransparency = 1
-Topbar.Parent = Main
-
-local Title = Instance.new("TextLabel")
-Title.Text = "KilometresUI V6"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.TextColor3 = Theme.Text
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0,18,0,0)
-Title.Size = UDim2.new(0,220,1,0)
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Topbar
-
---// BUTTONS
-
-local HideButton = Instance.new("TextButton")
-HideButton.Size = UDim2.new(0,36,0,36)
-HideButton.Position = UDim2.new(1,-50,0.5,-18)
-HideButton.Text = "-"
-HideButton.Font = Enum.Font.GothamBold
-HideButton.TextSize = 20
-HideButton.TextColor3 = Theme.Text
-HideButton.BackgroundColor3 = Theme.Light
-HideButton.Parent = Topbar
-Round(HideButton,12)
-
-local SettingsButton = Instance.new("TextButton")
-SettingsButton.Size = UDim2.new(0,36,0,36)
-SettingsButton.Position = UDim2.new(1,-92,0.5,-18)
-SettingsButton.Text = "⚙"
-SettingsButton.Font = Enum.Font.GothamBold
-SettingsButton.TextSize = 18
-SettingsButton.TextColor3 = Theme.Text
-SettingsButton.BackgroundColor3 = Theme.Light
-SettingsButton.Parent = Topbar
-Round(SettingsButton,12)
-
---// SIDEBAR
-
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0,170,1,-54)
-Sidebar.Position = UDim2.new(0,0,0,54)
-Sidebar.BackgroundTransparency = 1
-Sidebar.Parent = Main
-
-local TabLayout = Instance.new("UIListLayout")
-TabLayout.Padding = UDim.new(0,8)
-TabLayout.Parent = Sidebar
-
---// CONTENT
-
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-190,1,-74)
-Content.Position = UDim2.new(0,180,0,64)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
-
---// TABS
-
-local Tabs = {}
-local CurrentTab = nil
-
-local function CreateTab(name)
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(1,-16,0,42)
-    Button.Position = UDim2.new(0,8,0,0)
-    Button.Text = name
-    Button.Font = Enum.Font.GothamSemibold
-    Button.TextSize = 14
-    Button.TextColor3 = Theme.Text
-    Button.BackgroundColor3 = Theme.Light
-    Button.Parent = Sidebar
-    Round(Button,12)
-
-    local Frame = Instance.new("ScrollingFrame")
-    Frame.Size = UDim2.new(1,0,1,0)
-    Frame.CanvasSize = UDim2.new(0,0,0,1000)
-    Frame.ScrollBarThickness = 0
-    Frame.Visible = false
-    Frame.BackgroundTransparency = 1
-    Frame.Parent = Content
-
-    local Layout = Instance.new("UIListLayout")
-    Layout.Padding = UDim.new(0,12)
-    Layout.Parent = Frame
-
-    Button.MouseButton1Click:Connect(function()
-        for _,v in pairs(Tabs) do
-            v.Frame.Visible = false
-        end
-
-        Frame.Visible = true
-        CurrentTab = Frame
-    end)
-
-    Tabs[name] = {
-        Button = Button,
-        Frame = Frame
-    }
-
-    return Frame
+local function normalizeThemeMode(mode)
+	if mode == nil then return "auto" end
+	mode = tostring(mode):lower()
+	if mode == "auto" then return "auto" end
+	if mode == "light" then return "light" end
+	if mode == "dark" then return "dark" end
+	return "auto"
 end
 
---// HOME TAB
+-- ----------------------------
+-- Theme (neumorphism)
+-- ----------------------------
 
-local Home = CreateTab("Home")
-Home.Visible = true
+local Theme = {}
+Theme.__index = Theme
 
---// SECTION FUNCTION
+local function makeDefaults()
+	return {
+		Mode = "auto", -- auto | light | dark
 
-local function CreateSection(parent, title)
-    local Section = Instance.new("Frame")
-    Section.Size = UDim2.new(1,-10,0,220)
-    Section.BackgroundColor3 = Theme.Light
-    Section.Parent = parent
-    Round(Section,16)
-    Stroke(Section,Theme.Stroke)
+		-- Neumorphism parameters
+		CornerRadius = 14,
+		ShadowBlur = 0, -- we use simple dual shadows via Frames rather than blur instances
+		ShadowOpacity = 0.24,
+		HighlightOpacity = 0.20,
 
-    local Label = Instance.new("TextLabel")
-    Label.Text = title
-    Label.Font = Enum.Font.GothamBold
-    Label.TextSize = 15
-    Label.TextColor3 = Theme.Text
-    Label.BackgroundTransparency = 1
-    Label.Position = UDim2.new(0,16,0,10)
-    Label.Size = UDim2.new(1,-20,0,24)
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Section
+		-- Spacing / sizing defaults
+		Padding = 14,
+		Gap = 10,
 
-    return Section
+		-- Neumo intensity
+		Elevation = 2.5,
+
+		-- Font
+		Font = Enum.Font.Gotham, -- reasonable default
+		TextSize = 16,
+
+		-- Colors (light + dark tokens)
+		Light = {
+			Background = Color3.fromRGB(236, 240, 245),
+			Surface = Color3.fromRGB(231, 235, 240),
+			Text = Color3.fromRGB(24, 28, 34),
+			SubText = Color3.fromRGB(92, 102, 112),
+			Border = Color3.fromRGB(210, 219, 228),
+			Accent = Color3.fromRGB(70, 144, 255),
+			Accent2 = Color3.fromRGB(90, 190, 255),
+			Disabled = Color3.fromRGB(150, 158, 168),
+		},
+		Dark = {
+			Background = Color3.fromRGB(26, 28, 35),
+			Surface = Color3.fromRGB(33, 35, 43),
+			Text = Color3.fromRGB(235, 238, 245),
+			SubText = Color3.fromRGB(155, 162, 176),
+			Border = Color3.fromRGB(50, 55, 68),
+			Accent = Color3.fromRGB(120, 190, 255),
+			Accent2 = Color3.fromRGB(70, 165, 255),
+			Disabled = Color3.fromRGB(96, 103, 118),
+		},
+	}
 end
 
-local Dashboard = CreateSection(Home,"Dashboard")
-
---// TOGGLE
-
-local function CreateToggle(parent, text, default, callback)
-    local Toggle = Instance.new("TextButton")
-    Toggle.Size = UDim2.new(1,-20,0,40)
-    Toggle.Position = UDim2.new(0,10,0,40)
-    Toggle.BackgroundColor3 = Theme.Background
-    Toggle.Text = ""
-    Toggle.Parent = parent
-    Round(Toggle,12)
-
-    local Label = Instance.new("TextLabel")
-    Label.Text = text
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 14
-    Label.TextColor3 = Theme.Text
-    Label.BackgroundTransparency = 1
-    Label.Position = UDim2.new(0,12,0,0)
-    Label.Size = UDim2.new(1,-70,1,0)
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Toggle
-
-    local Circle = Instance.new("Frame")
-    Circle.Size = UDim2.new(0,22,0,22)
-    Circle.Position = UDim2.new(1,-34,0.5,-11)
-    Circle.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(80,80,80)
-    Circle.Parent = Toggle
-    Round(Circle,999)
-
-    local State = default
-
-    Toggle.MouseButton1Click:Connect(function()
-        State = not State
-
-        Tween(Circle,{
-            BackgroundColor3 = State and Theme.Accent or Color3.fromRGB(80,80,80)
-        },0.25)
-
-        callback(State)
-    end)
+function Theme.new(opts)
+	local t = setmetatable({}, Theme)
+	opts = opts or {}
+	local defaults = makeDefaults()
+	-- Merge shallowly; nested Light/Dark can be overridden by providing Light/Dark tables.
+	for k,v in pairs(defaults) do t[k] = v end
+	for k,v in pairs(opts) do
+		if k == "Light" or k == "Dark" then
+			t[k] = deepCopy(t[k] or {}, {})
+			for kk,vv in pairs(v or {}) do t[k][kk] = vv end
+		else
+			t[k] = v
+		end
+	end
+	t.Mode = normalizeThemeMode(t.Mode)
+	return t
 end
 
-CreateToggle(Dashboard,"Enable Blur",true,function(v)
-    Config.Blur = v
+function Theme:getResolvedMode()
+	if self.Mode ~= "auto" then return self.Mode end
 
-    if v then
-        Tween(Blur,{Size = 18},0.4)
-    else
-        Tween(Blur,{Size = 0},0.4)
-    end
-end)
+	-- Roblox doesn't directly expose "system" theme in a consistent way,
+	-- but we can infer from GuiService and/or UserInputService theme-related hints.
+	-- We'll attempt a best-effort: GuiService:GetDarkMode() exists in some places? (not guaranteed)
+	local ok, dark = pcall(function()
+		-- GuiService in modern Roblox often has GetTenFootInterface / etc; dark mode may vary.
+		if GuiService and GuiService.GetDarkMode then
+			return GuiService:GetDarkMode()
+		end
+		return nil
+	end)
 
---// WIDGETS
+	if ok and type(dark) == "boolean" then
+		return dark and "dark" or "light"
+	end
 
-local FPSWidget = Instance.new("Frame")
-FPSWidget.Size = UDim2.new(0,120,0,50)
-FPSWidget.Position = UDim2.new(0,20,0,100)
-FPSWidget.BackgroundColor3 = Theme.Light
-FPSWidget.Parent = ScreenGui
-Round(FPSWidget,14)
-Stroke(FPSWidget,Theme.Stroke)
-Dragify(FPSWidget)
+	-- Fallback: if UserInputService has a property in your environment, try it.
+	local ok2, systemTheme = pcall(function()
+		if UserInputService and UserInputService.GetUserTheme then
+			return UserInputService:GetUserTheme()
+		end
+		return nil
+	end)
 
-local FPSLabel = Instance.new("TextLabel")
-FPSLabel.Size = UDim2.new(1,0,1,0)
-FPSLabel.BackgroundTransparency = 1
-FPSLabel.TextColor3 = Theme.Text
-FPSLabel.Font = Enum.Font.GothamBold
-FPSLabel.TextSize = 15
-FPSLabel.Text = "FPS: 0"
-FPSLabel.Parent = FPSWidget
+	if ok2 and systemTheme ~= nil then
+		local s = tostring(systemTheme):lower()
+		if s:find("dark") then return "dark" end
+		if s:find("light") then return "light" end
+	end
 
---// FPS COUNTER
-
-local FPS = 0
-local Last = tick()
-
-RunService.RenderStepped:Connect(function()
-    FPS += 1
-
-    if tick() - Last >= 1 then
-        FPSLabel.Text = "FPS: "..FPS
-        FPS = 0
-        Last = tick()
-    end
-end)
-
---// SETTINGS PANEL
-
-local SettingsPanel = Instance.new("Frame")
-SettingsPanel.Size = UDim2.new(0,260,0,340)
-SettingsPanel.Position = UDim2.new(1,-280,0,60)
-SettingsPanel.BackgroundColor3 = Theme.Background
-SettingsPanel.Visible = false
-SettingsPanel.Parent = Main
-Round(SettingsPanel,16)
-Stroke(SettingsPanel,Theme.Stroke)
-
-local SettingsTitle = Instance.new("TextLabel")
-SettingsTitle.Text = "Settings"
-SettingsTitle.Font = Enum.Font.GothamBold
-SettingsTitle.TextSize = 16
-SettingsTitle.TextColor3 = Theme.Text
-SettingsTitle.BackgroundTransparency = 1
-SettingsTitle.Size = UDim2.new(1,0,0,40)
-SettingsTitle.Parent = SettingsPanel
-
-SettingsButton.MouseButton1Click:Connect(function()
-    SettingsPanel.Visible = not SettingsPanel.Visible
-
-    if SettingsPanel.Visible then
-        SettingsPanel.Size = UDim2.new(0,0,0,0)
-
-        Tween(SettingsPanel,{
-            Size = UDim2.new(0,260,0,340)
-        },0.3)
-    end
-end)
-
---// THEME BUTTONS
-
-local ThemeY = 60
-
-for ThemeName,_ in pairs(Themes) do
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(1,-20,0,36)
-    Btn.Position = UDim2.new(0,10,0,ThemeY)
-    Btn.BackgroundColor3 = Theme.Light
-    Btn.Text = ThemeName
-    Btn.Font = Enum.Font.GothamSemibold
-    Btn.TextSize = 14
-    Btn.TextColor3 = Theme.Text
-    Btn.Parent = SettingsPanel
-    Round(Btn,12)
-
-    ThemeY += 46
-
-    Btn.MouseButton1Click:Connect(function()
-        local T = Themes[ThemeName]
-
-        Main.BackgroundColor3 = T.Background
-        FPSWidget.BackgroundColor3 = T.Light
-
-        Theme = T
-    end)
+	-- Default fallback
+	return "light"
 end
 
---// HIDE SYSTEM
+function Theme:getTokens()
+	local mode = self:getResolvedMode()
+	local tokens = mode == "dark" and self.Dark or self.Light
+	return mode, tokens
+end
 
-local Hidden = false
+-- ----------------------------
+-- Neumorphism rendering helpers
+-- ----------------------------
 
-HideButton.MouseButton1Click:Connect(function()
-    Hidden = not Hidden
+local Neumo = {}
 
-    if Hidden then
-        Tween(Main,{
-            Size = UDim2.new(0,760,0,54)
-        },0.3)
+-- Applies a neumorphism style to a base container (Frame) using:
+-- - one inner "surface" frame
+-- - two shadow frames (dark+light) behind it
+-- - optional UIStroke for crisp border
+local function ensureCorner(obj, radius)
+	local corner = obj:FindFirstChildOfClass("UICorner")
+	if not corner then
+		corner = Instance.new("UICorner")
+		corner.Parent = obj
+	end
+	corner.CornerRadius = UDim.new(0, radius)
+	return corner
+end
 
-        Tween(Blur,{
-            Size = 0
-        },0.3)
-    else
-        Tween(Main,{
-            Size = UDim2.new(0,760,0,500)
-        },0.3)
+local function ensureStroke(obj, color)
+	local stroke = obj:FindFirstChildOfClass("UIStroke")
+	if not stroke then
+		stroke = Instance.new("UIStroke")
+		stroke.Parent = obj
+		stroke.Transparency = 0.0
+		stroke.Thickness = 1
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	end
+	stroke.Color = color
+	return stroke
+end
 
-        if Config.Blur then
-            Tween(Blur,{
-                Size = 18
-            },0.3)
-        end
-    end
-end)
+local function applyNeumoSurface(baseFrame, theme, opts)
+	opts = opts or {}
+	local radius = opts.Radius or theme.CornerRadius
+	local blur = opts.Blur or theme.ShadowBlur
 
---// NOTIFY
+	ensureCorner(baseFrame, radius)
+	ensureStroke(baseFrame, opts.BorderColor or (select(2, theme:getTokens()))[opts.BorderToken or "Border"])
 
-local Notify = Instance.new("Frame")
-Notify.Size = UDim2.new(0,260,0,70)
-Notify.Position = UDim2.new(1,-280,1,-90)
-Notify.BackgroundColor3 = Theme.Light
-Notify.Parent = ScreenGui
-Round(Notify,16)
-Stroke(Notify,Theme.Stroke)
+	-- We'll use a deterministic child layout:
+	--   baseFrame
+	--     ShadowDark (Frame)
+	--     ShadowLight (Frame)
+	--     Surface (Frame)
+	--     Content (optional)
+	baseFrame.BackgroundTransparency = 1
+	baseFrame.ClipsDescendants = false
 
-local NotifyText = Instance.new("TextLabel")
-NotifyText.Size = UDim2.new(1,0,1,0)
-NotifyText.BackgroundTransparency = 1
-NotifyText.Text = "KilometresUI Loaded"
-NotifyText.Font = Enum.Font.GothamBold
-NotifyText.TextSize = 15
-NotifyText.TextColor3 = Theme.Text
-NotifyText.Parent = Notify
+	local mode, tokens = theme:getTokens()
 
-Notify.Position = UDim2.new(1,300,1,-90)
+	-- adjust based on elevation
+	local elev = tonumber(opts.Elevation or theme.Elevation) or theme.Elevation
+	elev = clamp(elev, 0.2, 10)
 
-Tween(Notify,{
-    Position = UDim2.new(1,-280,1,-90)
-},0.4)
+	-- Colors
+	local bg = tokens.Background
+	local surface = tokens.Surface
+	local border = tokens.Border
 
-task.wait(3)
+	local darkColor = tokens.Border:Lerp(Color3.new(0,0,0), 0.25) -- make it deeper
+	local lightColor = tokens.Border:Lerp(Color3.new(1,1,1), 0.50) -- make it brighter
 
-Tween(Notify,{
-    Position = UDim2.new(1,300,1,-90)
-},0.4)
+	-- Shadows: positioned with offset to simulate emboss/deboss
+	local function getOrCreate(name, zOrder)
+		local child = baseFrame:FindFirstChild(name)
+		if not child then
+			child = Instance.new("Frame")
+			child.Name = name
+			child.BackgroundTransparency = 0
+			child.BorderSizePixel = 0
+			child.ZIndex = zOrder or 1
+			child.Parent = baseFrame
+		end
+		return child
+	end
 
---// CHAT WINDOW
+	-- Back shadows
+	local shadowDark = getOrCreate("ShadowDark", 1)
+	local shadowLight = getOrCreate("ShadowLight", 2)
+	local surfaceFrame = getOrCreate("Surface", 3)
 
-local ChatWindow = Instance.new("Frame")
-ChatWindow.Size = UDim2.new(0,320,0,220)
-ChatWindow.Position = UDim2.new(1,-340,1,-260)
-ChatWindow.BackgroundColor3 = Theme.Background
-ChatWindow.Parent = ScreenGui
-Round(ChatWindow,16)
-Stroke(ChatWindow,Theme.Stroke)
-Dragify(ChatWindow)
+	-- Surface dims inset by 1..2 px to create a crisp neumorphic cavity
+	local inset = opts.Inset or 2
 
-local ChatInput = Instance.new("TextBox")
-ChatInput.Size = UDim2.new(1,-20,0,40)
-ChatInput.Position = UDim2.new(0,10,1,-50)
-ChatInput.BackgroundColor3 = Theme.Light
-ChatInput.TextColor3 = Theme.Text
-ChatInput.PlaceholderText = "Type message..."
-ChatInput.Font = Enum.Font.Gotham
-ChatInput.TextSize = 14
-ChatInput.Parent = ChatWindow
-Round(ChatInput,12)
+	for _,f in ipairs({shadowDark, shadowLight, surfaceFrame}) do
+		f.ClipsDescendants = false
+		f.BorderSizePixel = 0
+		ensureCorner(f, radius)
+		f.Size = UDim2.fromScale(1,1)
+		f.Position = UDim2.fromOffset(0,0)
+	end
 
-local Send = Instance.new("TextButton")
-Send.Size = UDim2.new(0,70,0,40)
-Send.Position = UDim2.new(1,-80,1,-50)
-Send.BackgroundColor3 = Theme.Accent
-Send.Text = "Send"
-Send.Font = Enum.Font.GothamBold
-Send.TextSize = 14
-Send.TextColor3 = Color3.new(1,1,1)
-Send.Parent = ChatWindow
-Round(Send,12)
+	-- Background behind the neumorphism
+	baseFrame.BackgroundColor3 = bg
 
-Send.MouseButton1Click:Connect(function()
-    pcall(function()
-        game.ReplicatedStorage.DefaultChatSystemChatEvents
-        .SayMessageRequest:FireServer(ChatInput.Text,"All")
-    end)
-end)
+	shadowDark.BackgroundColor3 = darkColor
+	shadowLight.BackgroundColor3 = lightColor
+	shadowDark.BackgroundTransparency = 1 - (theme.ShadowOpacity or 0.24)
+	shadowLight.BackgroundTransparency = 1 - (theme.HighlightOpacity or 0.20)
 
---// KEYBIND
+	-- Offsets (depressed in dark mode / raised in light mode feels better)
+	local sign = (mode == "dark") and -1 or 1
+	local dx = math.floor((elev * sign) + 0.5)
+	local dy = math.floor((elev * sign) + 0.5)
 
-UIS.InputBegan:Connect(function(input,gp)
-    if gp then return end
+	shadowDark.Position = UDim2.fromOffset(inset + dx, inset + dy)
+	shadowLight.Position = UDim2.fromOffset(inset - dx, inset - dy)
 
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        ScreenGui.Enabled = not ScreenGui.Enabled
-    end
-end)
+	shadowDark.Size = UDim2.fromScale(1,1)
+	shadowLight.Size = UDim2.fromScale(1,1)
 
-print("KilometresUI V6 Loaded")
+	surfaceFrame.BackgroundColor3 = surface
+	surfaceFrame.BackgroundTransparency = 0
+	surfaceFrame.Position = UDim2.fromOffset(inset, inset)
+	surfaceFrame.Size = UDim2.fromScale(1,-0) -- size set by parent scale; keep stable
+	surfaceFrame.ZIndex = 3
+
+	-- Surface inset again with absolute sizes:
+	surfaceFrame.Size = UDim2.fromScale(1,1)
+	surfaceFrame.Position = UDim2.fromOffset(inset, inset)
+
+	-- optional stroke
+	local stroke = baseFrame:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = border
+		stroke.Thickness = 1
+	end
+
+	-- Content container
+	local content = baseFrame:FindFirstChild("Content")
+	if not content then
+		content = Instance.new("Frame")
+		content.Name = "Content"
+		content.BackgroundTransparency = 1
+		content.BorderSizePixel = 0
+		content.ZIndex = 10
+		content.Parent = baseFrame
+		-- Content fills the frame, but respects corner inset by setting padding with constraints.
+		content.Size = UDim2.fromScale(1,1)
+		content.Position = UDim2.fromOffset(0,0)
+	end
+	-- Ensure Content sits above surface and shadows
+	content.ZIndex = 10
+	return baseFrame
+end
+
+function Neumo.apply(baseFrame, theme, opts)
+	return applyNeumoSurface(baseFrame, theme, opts)
+end
+
+-- ----------------------------
+-- Core node system
+-- ----------------------------
+
+local Widget = {}
+Widget.__index = Widget
+
+function Widget.new(app, instance, kind, parentNode)
+	local self = setmetatable({}, Widget)
+	self._app = app
+	self._instance = instance
+	self._kind = kind
+	self._parent = parentNode
+	self._children = {}
+	self._destroyed = false
+	return self
+end
+
+function Widget:Instance()
+	return self._instance
+end
+
+function Widget:Destroy()
+	if self._destroyed then return end
+	self._destroyed = true
+	for _,child in ipairs(self._children) do
+		if child and child.Destroy then
+			child:Destroy()
+		end
+	end
+	self._children = {}
+	if self._instance and self._instance.Parent then
+		self._instance:Destroy()
+	end
+end
+
+function Widget:_track(child)
+	table.insert(self._children, child)
+end
+
+function Widget:_contentFrame()
+	local content = self._instance:FindFirstChild("Content")
+	if content and content:IsA("Frame") then return content end
+	return self._instance
+end
+
+-- Update props on underlying Instances
+function Widget:_applyProps(props, map)
+	props = props or {}
+	for key,val in pairs(props) do
+		local setter = map[key]
+		if setter then
+			setter(self._instance, val, props)
+		end
+	end
+end
+
+-- ----------------------------
+-- UI App / root
+-- ----------------------------
+
+local App = {}
+App.__index = App
+
+function App.new(opts)
+	opts = opts or {}
+	local parent = opts.Parent
+	if parent == nil then
+		-- best effort: local player gui if possible
+		local plr = Players.LocalPlayer
+		if plr then
+			parent = plr:WaitForChild("PlayerGui")
+		else
+			parent = game:GetService("Players"):WaitForChild("LocalPlayer"):WaitForChild("PlayerGui")
+		end
+	end
+
+	local screenGui
+	if opts.ScreenGui and isInstance(opts.ScreenGui) then
+		screenGui = opts.ScreenGui
+	else
+		screenGui = Instance.new("ScreenGui")
+		screenGui.Name = opts.Name or "NeumoUI"
+		screenGui.ResetOnSpawn = false
+		screenGui.IgnoreGuiInset = true
+		screenGui.Parent = parent
+	end
+
+	local theme = Theme.new(opts.Theme)
+
+	local self = setmetatable({}, App)
+	self._screenGui = screenGui
+	self._theme = theme
+	self._root = nil
+	self._widgets = {}
+	self._name = opts.Name or "NeumoUI"
+
+	-- apply global background to ScreenGui via a full-screen Frame only when needed.
+	-- We'll do it when you create first top widget.
+	self._globalBackground = nil
+
+	-- Auto theme updates (best effort)
+	self._themeTask = nil
+	if RunService:IsClient() then
+		-- Periodic check for mode changes
+		self._themeTask = task.spawn(function()
+			local last = theme:getResolvedMode()
+			while screenGui.Parent do
+				local current = theme:getResolvedMode()
+				if current ~= last then
+					last = current
+					self:_rethemeAll()
+				end
+				task.wait(2.0)
+			end
+		end)
+	end
+
+	return self
+end
+
+function App:Destroy()
+	if self._themeTask then
+		-- can’t reliably cancel task.spawn without handle; ignore
+	end
+	if self._screenGui and self._screenGui.Parent then
+		self._screenGui:Destroy()
+	end
+end
+
+function App:Theme()
+	return self._theme
+end
+
+function App:_rethemeAll()
+	for _,w in pairs(self._widgets) do
+		if w and w._applyTheme then
+			w:_applyTheme()
+		end
+	end
+end
+
+function App:_ensureGlobalBackground()
+	if self._globalBackground then return end
+	local bg = Instance.new("Frame")
+	bg.Name = "NeumoBackground"
+	bg.BackgroundTransparency = 0
+	bg.BackgroundColor3 = (select(2, self._theme:getTokens())).Background
+	bg.BorderSizePixel = 0
+	bg.Size = UDim2.fromScale(1,1)
+	bg.ZIndex = 0
+	bg.Parent = self._screenGui
+	self._globalBackground = bg
+end
+
+function App:_registerWidget(w)
+	self._widgets[w] = true
+end
+
+function App:_unregisterWidget(w)
+	self._widgets[w] = nil
+end
+
+-- ----------------------------
+-- Widgets
+-- ----------------------------
+
+local Widgets = {}
+
+-- Base Frame widget
+function App:Frame(props)
+	props = props or {}
+	local frame = Instance.new("Frame")
+	frame.Name = props.Name or "Frame"
+	frame.BorderSizePixel = 0
+	frame.BackgroundTransparency = 0
+	frame.ZIndex = props.ZIndex or 1
+
+	frame.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+	frame.Position = props.Position or UDim2.fromOffset(0,0)
+	frame.Size = props.Size or UDim2.fromOffset(200,200)
+
+	local w = Widget.new(self, frame, "Frame", nil)
+	self:_registerWidget(w)
+	self._root = self._root or w
+
+	-- Apply neumorphism
+	function w:_applyTheme()
+		-- tokens depend on theme; apply to this frame
+		Neumo.apply(frame, self._theme, {
+			CornerRadius = self._theme.CornerRadius,
+			Elevation = props.Elevation,
+			Inset = props.Inset,
+			BorderToken = props.BorderToken,
+			BorderColor = props.BorderColor,
+			Radius = props.Radius,
+		})
+	end
+
+	w:_applyTheme()
+
+	-- allow children within
+	local parent = props.ParentNode -- optional: if you want nested.
+	if props.ParentNode and props.ParentNode._contentFrame then
+		frame.Parent = props.ParentNode:_contentFrame()
+		props.ParentNode:_track(w)
+	else
+		self:_ensureGlobalBackground()
+		frame.Parent = self._screenGui
+	end
+
+	-- Apply generic Frame properties
+	frame.BackgroundColor3 = (select(2, self._theme:getTokens())).Surface
+
+	-- Add helper constructors on this node
+	function w:Frame(childProps) return self:__spawnChild(w, "Frame", childProps) end
+	function w:Label(childProps) return self:__spawnChild(w, "Label", childProps) end
+	function w:Button(childProps) return self:__spawnChild(w, "Button", childProps) end
+	function w:TextBox(childProps) return self:__spawnChild(w, "TextBox", childProps) end
+	function w:ScrollingFrame(childProps) return self:__spawnChild(w, "ScrollingFrame", childProps) end
+	function w:List(childProps) return self:__spawnChild(w, "List", childProps) end
+
+	return w
+end
+
+function App:__spawnChild(parentNode, kind, props)
+	props = props or {}
+	local childParent = parentNode and parentNode:_contentFrame() or self._screenGui
+
+	local created
+	if kind == "Frame" then
+		local frame = Instance.new("Frame")
+		frame.Name = props.Name or "Frame"
+		frame.BorderSizePixel = 0
+		frame.ZIndex = props.ZIndex or 2
+		frame.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		frame.Position = props.Position or UDim2.fromOffset(0,0)
+		frame.Size = props.Size or UDim2.fromOffset(200,200)
+		frame.Parent = childParent
+
+		created = Widget.new(self, frame, "Frame", parentNode)
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			Neumo.apply(frame, self._theme, {
+				Elevation = props.Elevation,
+				Inset = props.Inset,
+				BorderToken = props.BorderToken,
+				BorderColor = props.BorderColor,
+				Radius = props.Radius,
+			})
+		end
+		created:_applyTheme()
+
+	elseif kind == "Label" then
+		local label = Instance.new("TextLabel")
+		label.Name = props.Name or "Label"
+		label.BorderSizePixel = 0
+		label.ZIndex = props.ZIndex or 20
+		label.BackgroundTransparency = 1
+		label.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		label.Position = props.Position or UDim2.fromOffset(0,0)
+		label.Size = props.Size or UDim2.fromOffset(100,24)
+		label.Text = props.Text or ""
+		label.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
+		label.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
+		label.Font = props.Font or self._theme.Font
+		label.TextSize = props.TextSize or self._theme.TextSize
+		label.TextColor3 = (select(2, self._theme:getTokens())).Text
+		label.TextWrapped = props.TextWrapped ~= false
+		label.Parent = childParent
+
+		created = Widget.new(self, label, "Label", parentNode)
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			label.TextColor3 = (select(2, self._theme:getTokens())).Text
+		end
+		created:_applyTheme()
+
+	elseif kind == "Button" then
+		local container = Instance.new("Frame")
+		container.Name = props.Name or "Button"
+		container.BorderSizePixel = 0
+		container.ZIndex = props.ZIndex or 5
+		container.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		container.Position = props.Position or UDim2.fromOffset(0,0)
+		container.Size = props.Size or UDim2.fromOffset(160,44)
+		container.Parent = childParent
+
+		Neumo.apply(container, self._theme, {
+			Elevation = props.Elevation or self._theme.Elevation,
+			Inset = props.Inset or 2,
+			Radius = props.Radius,
+		})
+
+		local content = container:FindFirstChild("Content")
+		if not content then
+			content = container
+		end
+
+		local text = Instance.new("TextButton")
+		text.Name = "TextButton"
+		text.AutoButtonColor = false
+		text.BackgroundTransparency = 1
+		text.Size = UDim2.fromScale(1,1)
+		text.Position = UDim2.fromOffset(0,0)
+		text.Font = props.Font or self._theme.Font
+		text.TextSize = props.TextSize or self._theme.TextSize
+		text.Text = props.Text or "Button"
+		text.TextColor3 = (select(2, self._theme:getTokens())).Text
+		text.TextXAlignment = Enum.TextXAlignment.Center
+		text.TextYAlignment = Enum.TextYAlignment.Center
+		text.ZIndex = 30
+		text.Parent = content
+
+		local onClick = props.OnClick
+
+		local hovered = false
+		local enabled = props.Enabled ~= false
+
+		local createdInternal = Widget.new(self, container, "Button", parentNode)
+		createdInternal.ZIndex = container.ZIndex
+		created = createdInternal
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			local tokens = (select(2, self._theme:getTokens()))
+			text.TextColor3 = tokens.Text
+			-- Accentize if provided
+			if props.Accent ~= nil then
+				text.TextColor3 = props.Accent
+			else
+				-- subtle: keep text, but Surface stays neumorphic
+			end
+			-- Update container surface colors by reapplying Neumo
+			Neumo.apply(container, self._theme, {
+				Elevation = props.Elevation or self._theme.Elevation,
+				Inset = props.Inset or 2,
+				Radius = props.Radius,
+				BorderToken = props.BorderToken,
+			})
+		end
+		created:_applyTheme()
+
+		text.MouseEnter:Connect(function()
+			if not enabled then return end
+			hovered = true
+			container.BackgroundTransparency = 1
+			-- fake hover: bump elevation slightly by changing props
+			Neumo.apply(container, self._theme, {
+				Elevation = (props.HoverElevation or (self._theme.Elevation + 1.0)),
+				Inset = props.Inset or 2,
+				Radius = props.Radius,
+			})
+		end)
+
+		text.MouseLeave:Connect(function()
+			if not enabled then return end
+			hovered = false
+			created:_applyTheme()
+		end)
+
+		text.MouseButton1Down:Connect(function()
+			if not enabled then return end
+			Neumo.apply(container, self._theme, {
+				Elevation = (props.PressElevation or math.max(0.2, self._theme.Elevation - 1.0)),
+				Inset = (props.InsetPressed or (props.Inset or 2)) + 1,
+				Radius = props.Radius,
+			})
+		end)
+
+		text.MouseButton1Up:Connect(function()
+			if not enabled then return end
+			created:_applyTheme()
+			if hovered then
+				safeCall(onClick)
+			end
+		end)
+
+		text.AutoButtonColor = false
+		text.Active = true
+		text.Selectable = true
+		text.ZIndex = 40
+
+		-- Expose convenience API
+		function created:SetText(newText)
+			text.Text = tostring(newText or "")
+		end
+		function created:SetEnabled(v)
+			enabled = v and true or false
+			text.Active = enabled
+			text.TextColor3 = (select(2, self._theme:getTokens())).Text
+			if not enabled then
+				text.TextColor3 = (select(2, self._theme:getTokens())).Disabled
+			end
+		end
+
+	elseif kind == "TextBox" then
+		-- TextBox is usually just TextBox with background neumorphism container.
+		local container = Instance.new("Frame")
+		container.Name = props.Name or "TextBox"
+		container.BorderSizePixel = 0
+		container.ZIndex = props.ZIndex or 5
+		container.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		container.Position = props.Position or UDim2.fromOffset(0,0)
+		container.Size = props.Size or UDim2.fromOffset(220,44)
+		container.Parent = childParent
+
+		Neumo.apply(container, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+
+		local content = container:FindFirstChild("Content") or container
+
+		local tb = Instance.new("TextBox")
+		tb.Name = "TextBox"
+		tb.BackgroundTransparency = 1
+		tb.BorderSizePixel = 0
+		tb.ClearTextOnFocus = false
+		tb.Text = props.Text or ""
+		tb.Font = props.Font or self._theme.Font
+		tb.TextSize = props.TextSize or self._theme.TextSize
+		tb.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
+		tb.TextYAlignment = Enum.TextYAlignment.Center
+		tb.TextColor3 = (select(2, self._theme:getTokens())).Text
+		tb.PlaceholderText = props.PlaceholderText or ""
+		tb.PlaceholderColor3 = (select(2, self._theme:getTokens())).SubText
+		tb.TextScaled = false
+		tb.AutomaticSize = Enum.AutomaticSize.None
+		tb.Size = UDim2.fromScale(1,1)
+		tb.Position = UDim2.fromOffset(6,6)
+		tb.ZIndex = 40
+
+		-- padding
+		local padX = props.TextPaddingLeft or 6
+		local padY = props.TextPaddingTop or 8
+		tb.Position = UDim2.fromOffset(padX, padY)
+		tb.Size = UDim2.fromScale(1,1)
+		tb.Size = UDim2.fromOffset(container.AbsoluteSize.X - padX*2, container.AbsoluteSize.Y - padY*2)
+
+		tb.Parent = content
+
+		local createdInternal = Widget.new(self, container, "TextBox", parentNode)
+		created = createdInternal
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			local tokens = (select(2, self._theme:getTokens()))
+			tb.TextColor3 = tokens.Text
+			tb.PlaceholderColor3 = tokens.SubText
+			Neumo.apply(container, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+		end
+		created:_applyTheme()
+
+		local onChanged = props.OnChanged
+		local onSubmit = props.OnSubmit
+		local onFocusGained = props.OnFocusGained
+		local onFocusLost = props.OnFocusLost
+
+		tb.FocusLost:Connect(function(enterPressed)
+			-- OnSubmit triggers on Enter
+			if enterPressed then
+				safeCall(onSubmit, tb.Text)
+			end
+			safeCall(onFocusLost, tb.Text)
+		end)
+
+		tb.Focused:Connect(function()
+			safeCall(onFocusGained)
+			-- Slight lift on focus
+			Neumo.apply(container, self._theme, { Elevation = (props.FocusElevation or (self._theme.Elevation + 1.2)), Inset = props.Inset or 2, Radius = props.Radius })
+		end)
+
+		tb.FocusLost:Connect(function()
+			created:_applyTheme()
+		end)
+
+		tb:GetPropertyChangedSignal("Text"):Connect(function()
+			safeCall(onChanged, tb.Text)
+		end)
+
+		function created:GetText()
+			return tb.Text
+		end
+		function created:SetText(v)
+			tb.Text = tostring(v or "")
+		end
+		function created:SetEnabled(v)
+			tb.Active = v and true or false
+			tb.Selectable = v and true or false
+			tb.ZIndex = v and 40 or 30
+		end
+
+	elseif kind == "ScrollingFrame" then
+		local outer = Instance.new("Frame")
+		outer.Name = props.Name or "ScrollingFrame"
+		outer.BorderSizePixel = 0
+		outer.ZIndex = props.ZIndex or 5
+		outer.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		outer.Position = props.Position or UDim2.fromOffset(0,0)
+		outer.Size = props.Size or UDim2.fromOffset(240, 160)
+		outer.Parent = childParent
+
+		Neumo.apply(outer, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+
+		local content = outer:FindFirstChild("Content") or outer
+
+		local sf = Instance.new("ScrollingFrame")
+		sf.Name = "Scroll"
+		sf.BackgroundTransparency = 1
+		sf.BorderSizePixel = 0
+		sf.ZIndex = 20
+		sf.AutomaticCanvasSize = Enum.AutomaticSize.None
+		sf.CanvasSize = UDim2.fromOffset(0,0).X -- placeholder, we'll let children determine
+		sf.ScrollBarThickness = props.ScrollBarThickness or 6
+		sf.ScrollingDirection = props.ScrollingDirection or Enum.ScrollingDirection.Y
+		sf.Size = UDim2.fromScale(1,1)
+		sf.Position = UDim2.fromOffset(6,6)
+		sf.Parent = content
+		sf.CanvasSize = UDim2.fromOffset(0,0)
+
+		local uiListLayout = Instance.new("UIListLayout")
+		uiListLayout.SortOrder = props.SortOrder or Enum.SortOrder.LayoutOrder
+		uiListLayout.Padding = UDim.new(0, props.ItemGap or (self._theme.Gap or 10))
+		uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+		uiListLayout.Parent = sf
+
+		-- Canvas update
+		local createdInternal = Widget.new(self, outer, "ScrollingFrame", parentNode)
+		created = createdInternal
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			Neumo.apply(outer, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+		end
+		created:_applyTheme()
+
+		-- Expose builder
+		function created:Label(childProps)
+			childProps = childProps or {}
+			childProps.ParentNode = nil
+			return self:__spawnChild({
+				_contentFrame = function() return sf end,
+				_track = function(_, child) sf:FindFirstChild(child._instance.Name) end
+			}, "Label", childProps)
+		end
+
+		function created:Button(childProps)
+			childProps = childProps or {}
+			-- Put neumorphic buttons directly inside sf with normal spawn (parentNode content frame = sf)
+			local fakeParent = {
+				_contentFrame = function() return sf end,
+				_track = function() end
+			}
+			return self:__spawnChild(fakeParent, "Button", childProps)
+		end
+
+		function created:InstanceForChildren()
+			return sf
+		end
+
+	elseif kind == "List" then
+		-- Basic list with vertical items.
+		local container = Instance.new("Frame")
+		container.Name = props.Name or "List"
+		container.BorderSizePixel = 0
+		container.ZIndex = props.ZIndex or 5
+		container.AnchorPoint = props.AnchorPoint or Vector2.new(0,0)
+		container.Position = props.Position or UDim2.fromOffset(0,0)
+		container.Size = props.Size or UDim2.fromOffset(240, 160)
+		container.Parent = childParent
+
+		Neumo.apply(container, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+		local content = container:FindFirstChild("Content") or container
+
+		local sf = Instance.new("ScrollingFrame")
+		sf.Name = "Scroll"
+		sf.BackgroundTransparency = 1
+		sf.BorderSizePixel = 0
+		sf.ZIndex = 20
+		sf.ScrollBarThickness = props.ScrollBarThickness or 6
+		sf.AutomaticCanvasSize = Enum.AutomaticSize.Y
+		sf.CanvasSize = UDim2.fromOffset(0,0)
+		sf.ScrollingDirection = Enum.ScrollingDirection.Y
+		sf.Size = UDim2.fromScale(1,1)
+		sf.Position = UDim2.fromOffset(6,6)
+		sf.Parent = content
+
+		local layout = Instance.new("UIListLayout")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, props.ItemGap or self._theme.Gap)
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.VerticalAlignment = Enum.VerticalAlignment.Top
+		layout.Parent = sf
+
+		local items = props.Items or {}
+		local onItemClick = props.OnItemClick
+		local itemHeight = props.ItemHeight or 42
+
+		local createdInternal = Widget.new(self, container, "List", parentNode)
+		created = createdInternal
+		parentNode:_track(created)
+		self:_registerWidget(created)
+
+		function created:_applyTheme()
+			Neumo.apply(container, self._theme, { Elevation = props.Elevation or self._theme.Elevation, Inset = props.Inset or 2, Radius = props.Radius })
+		end
+		created:_applyTheme()
+
+		local function rebuild()
+			-- destroy old item nodes
+			for _,ch in ipairs(sf:GetChildren()) do
+				if ch:IsA("Frame") then ch:Destroy() end
+			end
+
+			for i,item in ipairs(items) do
+				local data = item
+				local labelText = ""
+				if type(data) == "string" then
+					labelText = data
+				elseif type(data) == "table" then
+					labelText = tostring(data.Text or data.Label or "")
+				else
+					labelText = tostring(data)
+				end
+
+				local btnFrame = Instance.new("Frame")
+				btnFrame.Name = "Item_"..i
+				btnFrame.BorderSizePixel = 0
+				btnFrame.BackgroundTransparency = 1
+				btnFrame.ZIndex = 30
+				btnFrame.Size = UDim2.fromOffset(sf.AbsoluteSize.X - 12, itemHeight)
+				btnFrame.Parent = sf
+
+				-- Use neumorphic container inside each item
+				local itemContainer = Instance.new("Frame")
+				itemContainer.Name = "NeumoItem"
+				itemContainer.BorderSizePixel = 0
+				itemContainer.BackgroundTransparency = 0
+				itemContainer.Size = UDim2.fromScale(1,1)
+				itemContainer.Position = UDim2.fromOffset(0,0)
+				itemContainer.Parent = btnFrame
+				Neumo.apply(itemContainer, self._theme, { Elevation = (props.ItemElevation or self._theme.Elevation), Inset = 2, Radius = props.Radius })
+
+				local tb = Instance.new("TextButton")
+				tb.AutoButtonColor = false
+				tb.BackgroundTransparency = 1
+				tb.BorderSizePixel = 0
+				tb.Size = UDim2.fromScale(1,1)
+				tb.Position = UDim2.fromOffset(0,0)
+				tb.ZIndex = 60
+				tb.Text = labelText
+				tb.Font = props.Font or self._theme.Font
+				tb.TextSize = props.ItemTextSize or self._theme.TextSize
+				tb.TextColor3 = (select(2, self._theme:getTokens())).Text
+				tb.TextXAlignment = Enum.TextXAlignment.Center
+				tb.TextYAlignment = Enum.TextYAlignment.Center
+				tb.Parent = itemContainer
+
+				tb.MouseButton1Up:Connect(function()
+					safeCall(onItemClick, data, i)
+				end)
+			end
+		end
+
+		rebuild()
+
+		-- Expose API
+		function created:SetItems(newItems)
+			items = newItems or {}
+			rebuild()
+		end
+		function created:GetItems()
+			return items
+		end
+	end
+
+	-- Apply basic common props to created widget if possible
+	-- (Most widget-specific props handled above.)
+	return created
+end
+
+-- ----------------------------
+-- Global helper API
+-- ----------------------------
+
+function App:Label(props)
+	-- convenience: create label at top-level
+	local fakeRoot = {
+		_contentFrame = function() return self._screenGui end,
+		_track = function() end
+	}
+	return self:__spawnChild(fakeRoot, "Label", props)
+end
+
+-- Public exports
+UI.new = function(opts)
+	local app = App.new(opts)
+	-- root helpers if user wants app:Button etc directly:
+	function app:Frame(props) return App.Frame(app, props) end
+	function app:Button(props)
+		local fake = { _contentFrame = function() return app._screenGui end, _track = function() end }
+		return app:__spawnChild(fake, "Button", props)
+	end
+	function app:Label(props)
+		local fake = { _contentFrame = function() return app._screenGui end, _track = function() end }
+		return app:__spawnChild(fake, "Label", props)
+	end
+	function app:TextBox(props)
+		local fake = { _contentFrame = function() return app._screenGui end, _track = function() end }
+		return app:__spawnChild(fake, "TextBox", props)
+	end
+	function app:ScrollingFrame(props)
+		local fake = { _contentFrame = function() return app._screenGui end, _track = function() end }
+		return app:__spawnChild(fake, "ScrollingFrame", props)
+	end
+	function app:List(props)
+		local fake = { _contentFrame = function() return app._screenGui end, _track = function() end }
+		return app:__spawnChild(fake, "List", props)
+	end
+	return app
+end
+
+return UI
