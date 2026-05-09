@@ -1,249 +1,254 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
 
---// Window
 local Window = Library:CreateWindow({
-	Title = "Kilometres UI X",
-	Subtitle = "All Elements Showcase",
-	Theme = "Nebula",
-	Blur = true,
-	Size = Library.IsMobile and UDim2.fromOffset(430,650) or UDim2.fromOffset(980,620),
+    Title = "Kilometres UI X",
+    Subtitle = "All Elements Example",
+    Theme = "Nebula",
+
+    -- mobile safe
+    Blur = false,
+    AutoScale = true,
+    SafeInsets = true,
+    MobileSidebar = true,
 })
 
---// Tabs
-local MainTab = Window:CreateTab({
-	Name = "Main"
+--// =====================================================
+--// MAIN TAB
+--// =====================================================
+
+local Main = Window:CreateTab({
+    Name = "Main"
 })
 
-local VisualTab = Window:CreateTab({
-	Name = "Visuals"
-})
+local MainSection = Main:CreateSection("Gameplay")
 
-local SettingsTab = Window:CreateTab({
-	Name = "Settings"
-})
+MainSection:CreateLabel("Kilometres UI X Example")
 
---// Sections
-local MainSection = MainTab:CreateSection("Gameplay")
-local CombatSection = MainTab:CreateSection("Combat")
-
-local VisualSection = VisualTab:CreateSection("Graphics")
-local ThemeSection = VisualTab:CreateSection("Themes")
-
-local SystemSection = SettingsTab:CreateSection("System")
-local ConfigSection = SettingsTab:CreateSection("Configs")
-
---// LABEL
-MainSection:CreateLabel("Welcome to Kilometres UI X")
-
---// BUTTON
 MainSection:CreateButton({
-	Name = "Print Hello",
-	Callback = function()
-		print("Hello from Kilometres UI X")
-		
-		Library:Notify({
-			Title = "Button Clicked",
-			Content = "You pressed the hello button.",
-			Duration = 3,
-		})
-	end,
+    Name = "Send Notification",
+    Callback = function()
+        Library:Notify({
+            Title = "Notification",
+            Content = "Button clicked successfully.",
+            Duration = 3
+        })
+    end
 })
 
---// TOGGLE
 MainSection:CreateToggle({
-	Name = "Auto Farm",
-	Default = false,
-	Flag = "AutoFarm",
-	Callback = function(v)
-		print("Auto Farm:", v)
-	end,
+    Name = "Auto Farm",
+    Flag = "autofarm",
+    Default = false,
+    Callback = function(v)
+        print("Auto Farm:", v)
+    end
 })
 
-CombatSection:CreateToggle({
-	Name = "Kill Aura",
-	Default = true,
-	Flag = "KillAura",
-	Callback = function(v)
-		print("Kill Aura:", v)
-	end,
-})
-
---// SLIDER
 MainSection:CreateSlider({
-	Name = "WalkSpeed",
-	Min = 16,
-	Max = 200,
-	Default = 16,
-	Increment = 1,
-	Flag = "WalkSpeed",
-	Callback = function(v)
-		print("WalkSpeed:", v)
-	end,
+    Name = "WalkSpeed",
+    Flag = "walkspeed",
+    Min = 16,
+    Max = 200,
+    Increment = 1,
+    Default = 16,
+    Callback = function(v)
+        print("WalkSpeed:", v)
+    end
 })
 
-CombatSection:CreateSlider({
-	Name = "Hitbox Size",
-	Min = 1,
-	Max = 30,
-	Default = 5,
-	Increment = 1,
-	Flag = "Hitbox",
-	Callback = function(v)
-		print("Hitbox:", v)
-	end,
+MainSection:CreateDropdown({
+    Name = "Select Mode",
+    Flag = "mode",
+    Options = {
+        "Legit",
+        "Rage",
+        "Stealth",
+        "Custom"
+    },
+    Default = "Legit",
+    Callback = function(v)
+        print("Mode:", v)
+    end
 })
 
---// TEXTBOX
-VisualSection:CreateTextbox({
-	Name = "Custom Preset",
-	Placeholder = "Enter preset name...",
-	Default = "Nebula",
-	Flag = "PresetName",
-	Callback = function(v)
-		print("Preset:", v)
-	end,
+MainSection:CreateTextbox({
+    Name = "Player Name",
+    Flag = "playername",
+    Placeholder = "Enter username...",
+    Default = "",
+    Callback = function(v)
+        print("Textbox:", v)
+    end
 })
 
---// DROPDOWN
+MainSection:CreateKeybind({
+    Name = "Toggle UI",
+    Flag = "uikey",
+    Default = Enum.KeyCode.RightShift,
+    Callback = function(key)
+        print("Pressed:", key.Name)
+        Window:SetVisible(not Window.Visible)
+    end
+})
+
+--// =====================================================
+--// VISUAL TAB
+--// =====================================================
+
+local Visual = Window:CreateTab({
+    Name = "Visuals"
+})
+
+local VisualSection = Visual:CreateSection("Visual Settings")
+
+VisualSection:CreateToggle({
+    Name = "ESP",
+    Flag = "esp",
+    Default = true,
+    Callback = function(v)
+        print("ESP:", v)
+    end
+})
+
+VisualSection:CreateToggle({
+    Name = "Tracers",
+    Flag = "tracers",
+    Default = false,
+    Callback = function(v)
+        print("Tracers:", v)
+    end
+})
+
+VisualSection:CreateSlider({
+    Name = "Brightness",
+    Flag = "brightness",
+    Min = 0,
+    Max = 100,
+    Increment = 1,
+    Default = 50,
+    Callback = function(v)
+        print("Brightness:", v)
+    end
+})
+
 VisualSection:CreateDropdown({
-	Name = "Graphics Mode",
-	Options = {
-		"Low",
-		"Medium",
-		"High",
-		"Ultra",
-	},
-	Default = "High",
-	Flag = "GraphicsMode",
-	Callback = function(v)
-		print("Graphics Mode:", v)
-	end,
+    Name = "Theme",
+    Flag = "theme",
+    Options = {
+        "Nebula",
+        "Phantom",
+        "Nova",
+        "Quantum",
+        "Eclipse"
+    },
+    Default = "Nebula",
+    Callback = function(v)
+        Library:SetTheme(v)
+    end
 })
 
-ThemeSection:CreateDropdown({
-	Name = "Theme",
-	Options = {
-		"Nebula",
-		"Phantom",
-		"Eclipse",
-		"Quantum",
-		"Nova",
-	},
-	Default = "Nebula",
-	Flag = "Theme",
-	Callback = function(v)
-		Library:SetTheme(v)
+--// =====================================================
+--// CONFIG TAB
+--// =====================================================
 
-		Library:Notify({
-			Title = "Theme Changed",
-			Content = "Theme switched to "..v,
-			Duration = 3,
-		})
-	end,
+local Config = Window:CreateTab({
+    Name = "Config"
 })
 
---// KEYBIND
-SystemSection:CreateKeybind({
-	Name = "Open Command Palette",
-	Default = Enum.KeyCode.RightShift,
-	Flag = "PaletteBind",
-	Callback = function()
-		Library:OpenPalette()
-	end,
-})
+local ConfigSection = Config:CreateSection("Configs")
 
---// BUTTONS
-SystemSection:CreateButton({
-	Name = "Show Notification",
-	Callback = function()
-		Library:Notify({
-			Title = "Kilometres UI X",
-			Content = "This is a futuristic mobile-first UI library.",
-			Duration = 4,
-		})
-	end,
-})
-
-SystemSection:CreateButton({
-	Name = "Enable Blur",
-	Callback = function()
-		Library:EnableBlur(true)
-
-		Library:Notify({
-			Title = "Blur",
-			Content = "Blur enabled.",
-			Duration = 2,
-		})
-	end,
-})
-
-SystemSection:CreateButton({
-	Name = "Disable Blur",
-	Callback = function()
-		Library:EnableBlur(false)
-
-		Library:Notify({
-			Title = "Blur",
-			Content = "Blur disabled.",
-			Duration = 2,
-		})
-	end,
-})
-
---// CONFIGS
-ConfigSection:CreateButton({
-	Name = "Save Config",
-	Callback = function()
-		local ok = Library:SaveConfig("demo")
-
-		Library:Notify({
-			Title = "Save Config",
-			Content = ok and "Saved demo.json" or "Executor unsupported.",
-			Duration = 3,
-		})
-	end,
+ConfigSection:CreateTextbox({
+    Name = "Config Name",
+    Flag = "configname",
+    Placeholder = "example",
+    Default = "default",
 })
 
 ConfigSection:CreateButton({
-	Name = "Load Config",
-	Callback = function()
-		local ok = Library:LoadConfig("demo")
+    Name = "Save Config",
+    Callback = function()
+        local cfg = Library.Flags.configname or "default"
 
-		Library:Notify({
-			Title = "Load Config",
-			Content = ok and "Loaded demo.json" or "Config not found.",
-			Duration = 3,
-		})
-	end,
+        Library:SaveConfig(cfg)
+
+        Library:Notify({
+            Title = "Config",
+            Content = "Saved config: "..cfg,
+            Duration = 3
+        })
+    end
 })
 
 ConfigSection:CreateButton({
-	Name = "Destroy UI",
-	Callback = function()
-		Window:Destroy()
-	end,
+    Name = "Load Config",
+    Callback = function()
+        local cfg = Library.Flags.configname or "default"
+
+        Library:LoadConfig(cfg)
+
+        Library:Notify({
+            Title = "Config",
+            Content = "Loaded config: "..cfg,
+            Duration = 3
+        })
+    end
 })
 
---// COMMANDS
-Window:RegisterCommand("Notify Test", function()
-	Library:Notify({
-		Title = "Command Palette",
-		Content = "You executed a custom command.",
-		Duration = 3,
-	})
-end, "Custom")
+ConfigSection:CreateButton({
+    Name = "Open Command Palette",
+    Callback = function()
+        Library:OpenPalette()
+    end
+})
 
-Window:RegisterCommand("Set Nova Theme", function()
-	Library:SetTheme("Nova")
-end, "Themes")
+--// =====================================================
+--// EXTRA TAB
+--// =====================================================
 
-Window:RegisterCommand("Set Quantum Theme", function()
-	Library:SetTheme("Quantum")
-end, "Themes")
+local Extra = Window:CreateTab({
+    Name = "Extra"
+})
 
---// START NOTIFICATION
+local ExtraSection = Extra:CreateSection("Extra Stuff")
+
+ExtraSection:CreateButton({
+    Name = "Destroy UI",
+    Callback = function()
+        Window:Destroy()
+    end
+})
+
+ExtraSection:CreateButton({
+    Name = "Change To Nova Theme",
+    Callback = function()
+        Library:SetTheme("Nova")
+    end
+})
+
+ExtraSection:CreateButton({
+    Name = "Change To Phantom Theme",
+    Callback = function()
+        Library:SetTheme("Phantom")
+    end
+})
+
+ExtraSection:CreateButton({
+    Name = "Test Notification",
+    Callback = function()
+        Library:Notify({
+            Title = "Kilometres UI X",
+            Content = "Everything is working perfectly.",
+            Duration = 4
+        })
+    end
+})
+
+--// =====================================================
+--// STARTUP
+--// =====================================================
+
 Library:Notify({
-	Title = "Kilometres UI X",
-	Content = "Loaded all UI elements successfully.",
-	Duration = 5,
+    Title = "Kilometres UI X",
+    Content = "Loaded all UI elements example.",
+    Duration = 5
 })
