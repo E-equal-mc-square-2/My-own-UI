@@ -1,309 +1,249 @@
---// KILOMETRES UI V5 EXAMPLE
---// Uses all available systems/elements
-
-local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
-
-----------------------------------------------------------------
--- EXTRA TABS
-----------------------------------------------------------------
-
-local MainTab = UI:CreateTab("Main")
-local CombatTab = UI:CreateTab("Combat")
-local VisualTab = UI:CreateTab("Visual")
-local UtilityTab = UI:CreateTab("Utility")
-
-----------------------------------------------------------------
--- MAIN TOGGLES
-----------------------------------------------------------------
-
-UI:CreateToggle(MainTab, "Auto Farm", false, function(v)
-	print("Auto Farm:", v)
-end)
-
-UI:CreateToggle(MainTab, "Auto Collect", true, function(v)
-	print("Auto Collect:", v)
-end)
-
-UI:CreateToggle(MainTab, "Auto Rebirth", false, function(v)
-	print("Auto Rebirth:", v)
-end)
-
-UI:CreateToggle(MainTab, "Anti AFK", true, function(v)
-	print("Anti AFK:", v)
-end)
-
-----------------------------------------------------------------
--- COMBAT TOGGLES
-----------------------------------------------------------------
-
-UI:CreateToggle(CombatTab, "Kill Aura", false, function(v)
-	print("Kill Aura:", v)
-end)
-
-UI:CreateToggle(CombatTab, "Silent Aim", false, function(v)
-	print("Silent Aim:", v)
-end)
-
-UI:CreateToggle(CombatTab, "ESP Players", true, function(v)
-	print("ESP Players:", v)
-end)
-
-UI:CreateToggle(CombatTab, "Hitbox Expand", false, function(v)
-	print("Hitbox Expand:", v)
-end)
-
-----------------------------------------------------------------
--- VISUAL TOGGLES
-----------------------------------------------------------------
-
-UI:CreateToggle(VisualTab, "FullBright", false, function(v)
-	print("FullBright:", v)
-
-	if v then
-		game:GetService("Lighting").Brightness = 5
-	else
-		game:GetService("Lighting").Brightness = 2
-	end
-end)
-
-UI:CreateToggle(VisualTab, "Shadows", true, function(v)
-	print("Shadows:", v)
-
-	game:GetService("Lighting").GlobalShadows = v
-end)
-
-UI:CreateToggle(VisualTab, "Bloom Effect", true, function(v)
-	print("Bloom:", v)
-end)
-
-UI:CreateToggle(VisualTab, "Particles", true, function(v)
-	print("Particles:", v)
-end)
-
-----------------------------------------------------------------
--- UTILITY TOGGLES
-----------------------------------------------------------------
-
-UI:CreateToggle(UtilityTab, "Infinite Jump", false, function(v)
-	print("Infinite Jump:", v)
-end)
-
-UI:CreateToggle(UtilityTab, "Fly", false, function(v)
-	print("Fly:", v)
-end)
-
-UI:CreateToggle(UtilityTab, "NoClip", false, function(v)
-	print("NoClip:", v)
-end)
-
-UI:CreateToggle(UtilityTab, "Speed Boost", false, function(v)
-	print("Speed Boost:", v)
-
-	local humanoid = game.Players.LocalPlayer.Character and
-		game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-
-	if humanoid then
-		humanoid.WalkSpeed = v and 50 or 16
-	end
-end)
-
-----------------------------------------------------------------
--- CUSTOM UI OBJECTS INSIDE TABS
-----------------------------------------------------------------
-
--- LABEL EXAMPLE
-local Label = Instance.new("TextLabel")
-Label.Size = UDim2.new(1, -10, 0, 40)
-Label.BackgroundTransparency = 1
-Label.Text = "KilometresUI V5 Example"
-Label.Font = Enum.Font.GothamBold
-Label.TextSize = 22
-Label.TextColor3 = UI.Themes[UI.Theme].Accent
-Label.Parent = MainTab
-
--- BUTTON EXAMPLE
-local Button = Instance.new("TextButton")
-Button.Size = UDim2.new(1, -10, 0, 45)
-Button.BackgroundColor3 = UI.Themes[UI.Theme].Accent
-Button.Text = "Show Notification"
-Button.Font = Enum.Font.GothamBold
-Button.TextSize = 16
-Button.TextColor3 = Color3.new(1,1,1)
-Button.Parent = MainTab
-
-local ButtonCorner = Instance.new("UICorner")
-ButtonCorner.CornerRadius = UDim.new(0, 12)
-ButtonCorner.Parent = Button
-
-Button.MouseButton1Click:Connect(function()
-	print("Notification Button Clicked")
-end)
-
-----------------------------------------------------------------
--- DROPDOWN STYLE EXAMPLE
-----------------------------------------------------------------
-
-local Dropdown = Instance.new("TextButton")
-Dropdown.Size = UDim2.new(1, -10, 0, 45)
-Dropdown.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
-Dropdown.Text = "Select Weapon"
-Dropdown.Font = Enum.Font.GothamBold
-Dropdown.TextSize = 15
-Dropdown.TextColor3 = UI.Themes[UI.Theme].Text
-Dropdown.Parent = CombatTab
-
-local DropCorner = Instance.new("UICorner")
-DropCorner.CornerRadius = UDim.new(0,12)
-DropCorner.Parent = Dropdown
-
-local Weapons = {
-	"Sword",
-	"Gun",
-	"Magic",
-	"Bow"
-}
-
-local Current = 1
-
-Dropdown.MouseButton1Click:Connect(function()
-	Current += 1
-
-	if Current > #Weapons then
-		Current = 1
-	end
-
-	Dropdown.Text = "Weapon: "..Weapons[Current]
-
-	print("Selected:", Weapons[Current])
-end)
-
-----------------------------------------------------------------
--- SLIDER STYLE EXAMPLE
-----------------------------------------------------------------
-
-local SliderFrame = Instance.new("Frame")
-SliderFrame.Size = UDim2.new(1,-10,0,60)
-SliderFrame.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
-SliderFrame.Parent = UtilityTab
-
-local SliderCorner = Instance.new("UICorner")
-SliderCorner.CornerRadius = UDim.new(0,12)
-SliderCorner.Parent = SliderFrame
-
-local SliderBar = Instance.new("Frame")
-SliderBar.Size = UDim2.new(0.8,0,0,8)
-SliderBar.Position = UDim2.new(0.1,0,0.6,0)
-SliderBar.BackgroundColor3 = Color3.fromRGB(60,60,60)
-SliderBar.Parent = SliderFrame
-
-local SliderBarCorner = Instance.new("UICorner")
-SliderBarCorner.CornerRadius = UDim.new(1,0)
-SliderBarCorner.Parent = SliderBar
-
-local Fill = Instance.new("Frame")
-Fill.Size = UDim2.new(0.4,0,1,0)
-Fill.BackgroundColor3 = UI.Themes[UI.Theme].Accent
-Fill.Parent = SliderBar
-
-local FillCorner = Instance.new("UICorner")
-FillCorner.CornerRadius = UDim.new(1,0)
-FillCorner.Parent = Fill
-
-local SliderText = Instance.new("TextLabel")
-SliderText.BackgroundTransparency = 1
-SliderText.Size = UDim2.new(1,0,0,25)
-SliderText.Text = "WalkSpeed: 40"
-SliderText.Font = Enum.Font.GothamBold
-SliderText.TextColor3 = UI.Themes[UI.Theme].Text
-SliderText.TextSize = 14
-SliderText.Parent = SliderFrame
-
-----------------------------------------------------------------
--- TEXTBOX EXAMPLE
-----------------------------------------------------------------
-
-local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(1,-10,0,45)
-TextBox.BackgroundColor3 = UI.Themes[UI.Theme].Secondary
-TextBox.PlaceholderText = "Enter custom text..."
-TextBox.Text = ""
-TextBox.Font = Enum.Font.Gotham
-TextBox.TextSize = 15
-TextBox.TextColor3 = UI.Themes[UI.Theme].Text
-TextBox.Parent = MainTab
-
-local TextCorner = Instance.new("UICorner")
-TextCorner.CornerRadius = UDim.new(0,12)
-TextCorner.Parent = TextBox
-
-TextBox.FocusLost:Connect(function()
-	print("Textbox Value:", TextBox.Text)
-end)
-
-----------------------------------------------------------------
--- LIVE THEME CYCLER
-----------------------------------------------------------------
-
-local ThemeButton = Instance.new("TextButton")
-ThemeButton.Size = UDim2.new(1,-10,0,45)
-ThemeButton.BackgroundColor3 = UI.Themes[UI.Theme].Accent
-ThemeButton.Text = "Cycle Theme"
-ThemeButton.Font = Enum.Font.GothamBold
-ThemeButton.TextSize = 16
-ThemeButton.TextColor3 = Color3.new(1,1,1)
-ThemeButton.Parent = VisualTab
-
-local ThemeCorner = Instance.new("UICorner")
-ThemeCorner.CornerRadius = UDim.new(0,12)
-ThemeCorner.Parent = ThemeButton
-
-local ThemeOrder = {
-	"Midnight",
-	"Neon",
-	"Sakura",
-	"Frost"
-}
-
-local ThemeIndex = 1
-
-ThemeButton.MouseButton1Click:Connect(function()
-
-	ThemeIndex += 1
-
-	if ThemeIndex > #ThemeOrder then
-		ThemeIndex = 1
-	end
-
-	local NewTheme = ThemeOrder[ThemeIndex]
-
-	UI.Theme = NewTheme
-
-	print("Changed Theme:", NewTheme)
-end)
-
-----------------------------------------------------------------
--- KEYBIND EXAMPLE
-----------------------------------------------------------------
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
-
-	if gpe then
-		return
-	end
-
-	if input.KeyCode == Enum.KeyCode.RightShift then
-		print("RightShift Pressed")
-	end
-
-	if input.KeyCode == Enum.KeyCode.F then
-		print("F Keybind Triggered")
-	end
-
-end)
-
-----------------------------------------------------------------
--- STARTUP MESSAGE
-----------------------------------------------------------------
-
-print("KilometresUI V5 Example Loaded")
-print("All major systems initialized")
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
+
+--// Window
+local Window = Library:CreateWindow({
+	Title = "Kilometres UI X",
+	Subtitle = "All Elements Showcase",
+	Theme = "Nebula",
+	Blur = true,
+	Size = Library.IsMobile and UDim2.fromOffset(430,650) or UDim2.fromOffset(980,620),
+})
+
+--// Tabs
+local MainTab = Window:CreateTab({
+	Name = "Main"
+})
+
+local VisualTab = Window:CreateTab({
+	Name = "Visuals"
+})
+
+local SettingsTab = Window:CreateTab({
+	Name = "Settings"
+})
+
+--// Sections
+local MainSection = MainTab:CreateSection("Gameplay")
+local CombatSection = MainTab:CreateSection("Combat")
+
+local VisualSection = VisualTab:CreateSection("Graphics")
+local ThemeSection = VisualTab:CreateSection("Themes")
+
+local SystemSection = SettingsTab:CreateSection("System")
+local ConfigSection = SettingsTab:CreateSection("Configs")
+
+--// LABEL
+MainSection:CreateLabel("Welcome to Kilometres UI X")
+
+--// BUTTON
+MainSection:CreateButton({
+	Name = "Print Hello",
+	Callback = function()
+		print("Hello from Kilometres UI X")
+		
+		Library:Notify({
+			Title = "Button Clicked",
+			Content = "You pressed the hello button.",
+			Duration = 3,
+		})
+	end,
+})
+
+--// TOGGLE
+MainSection:CreateToggle({
+	Name = "Auto Farm",
+	Default = false,
+	Flag = "AutoFarm",
+	Callback = function(v)
+		print("Auto Farm:", v)
+	end,
+})
+
+CombatSection:CreateToggle({
+	Name = "Kill Aura",
+	Default = true,
+	Flag = "KillAura",
+	Callback = function(v)
+		print("Kill Aura:", v)
+	end,
+})
+
+--// SLIDER
+MainSection:CreateSlider({
+	Name = "WalkSpeed",
+	Min = 16,
+	Max = 200,
+	Default = 16,
+	Increment = 1,
+	Flag = "WalkSpeed",
+	Callback = function(v)
+		print("WalkSpeed:", v)
+	end,
+})
+
+CombatSection:CreateSlider({
+	Name = "Hitbox Size",
+	Min = 1,
+	Max = 30,
+	Default = 5,
+	Increment = 1,
+	Flag = "Hitbox",
+	Callback = function(v)
+		print("Hitbox:", v)
+	end,
+})
+
+--// TEXTBOX
+VisualSection:CreateTextbox({
+	Name = "Custom Preset",
+	Placeholder = "Enter preset name...",
+	Default = "Nebula",
+	Flag = "PresetName",
+	Callback = function(v)
+		print("Preset:", v)
+	end,
+})
+
+--// DROPDOWN
+VisualSection:CreateDropdown({
+	Name = "Graphics Mode",
+	Options = {
+		"Low",
+		"Medium",
+		"High",
+		"Ultra",
+	},
+	Default = "High",
+	Flag = "GraphicsMode",
+	Callback = function(v)
+		print("Graphics Mode:", v)
+	end,
+})
+
+ThemeSection:CreateDropdown({
+	Name = "Theme",
+	Options = {
+		"Nebula",
+		"Phantom",
+		"Eclipse",
+		"Quantum",
+		"Nova",
+	},
+	Default = "Nebula",
+	Flag = "Theme",
+	Callback = function(v)
+		Library:SetTheme(v)
+
+		Library:Notify({
+			Title = "Theme Changed",
+			Content = "Theme switched to "..v,
+			Duration = 3,
+		})
+	end,
+})
+
+--// KEYBIND
+SystemSection:CreateKeybind({
+	Name = "Open Command Palette",
+	Default = Enum.KeyCode.RightShift,
+	Flag = "PaletteBind",
+	Callback = function()
+		Library:OpenPalette()
+	end,
+})
+
+--// BUTTONS
+SystemSection:CreateButton({
+	Name = "Show Notification",
+	Callback = function()
+		Library:Notify({
+			Title = "Kilometres UI X",
+			Content = "This is a futuristic mobile-first UI library.",
+			Duration = 4,
+		})
+	end,
+})
+
+SystemSection:CreateButton({
+	Name = "Enable Blur",
+	Callback = function()
+		Library:EnableBlur(true)
+
+		Library:Notify({
+			Title = "Blur",
+			Content = "Blur enabled.",
+			Duration = 2,
+		})
+	end,
+})
+
+SystemSection:CreateButton({
+	Name = "Disable Blur",
+	Callback = function()
+		Library:EnableBlur(false)
+
+		Library:Notify({
+			Title = "Blur",
+			Content = "Blur disabled.",
+			Duration = 2,
+		})
+	end,
+})
+
+--// CONFIGS
+ConfigSection:CreateButton({
+	Name = "Save Config",
+	Callback = function()
+		local ok = Library:SaveConfig("demo")
+
+		Library:Notify({
+			Title = "Save Config",
+			Content = ok and "Saved demo.json" or "Executor unsupported.",
+			Duration = 3,
+		})
+	end,
+})
+
+ConfigSection:CreateButton({
+	Name = "Load Config",
+	Callback = function()
+		local ok = Library:LoadConfig("demo")
+
+		Library:Notify({
+			Title = "Load Config",
+			Content = ok and "Loaded demo.json" or "Config not found.",
+			Duration = 3,
+		})
+	end,
+})
+
+ConfigSection:CreateButton({
+	Name = "Destroy UI",
+	Callback = function()
+		Window:Destroy()
+	end,
+})
+
+--// COMMANDS
+Window:RegisterCommand("Notify Test", function()
+	Library:Notify({
+		Title = "Command Palette",
+		Content = "You executed a custom command.",
+		Duration = 3,
+	})
+end, "Custom")
+
+Window:RegisterCommand("Set Nova Theme", function()
+	Library:SetTheme("Nova")
+end, "Themes")
+
+Window:RegisterCommand("Set Quantum Theme", function()
+	Library:SetTheme("Quantum")
+end, "Themes")
+
+--// START NOTIFICATION
+Library:Notify({
+	Title = "Kilometres UI X",
+	Content = "Loaded all UI elements successfully.",
+	Duration = 5,
+})
