@@ -624,35 +624,20 @@ function Library:CreateWindow(cfg)
 		Scale = 1,
 	})
 
-	local OrbGlow = New("UIStroke", {
-		Parent = Orb,
-		Color = Color3.new(1, 1, 1),
-		Thickness = 0,
-		Transparency = 0.6,
-	})
-
-	-- orb drag + safe edge clamp
+	-- moveable orb + idle/click animation
 	do
-		local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
-
-		local function ClampOrb()
-			local vp = Camera and Camera.ViewportSize or Vector2.new(1280, 720)
-			local abs = Orb.AbsoluteSize
-			local x = Clamp(Orb.Position.X.Offset, 10, math.max(10, vp.X - abs.X - 10))
-			local y = Clamp(Orb.Position.Y.Offset, 10, math.max(10, vp.Y - abs.Y - 10))
-			Orb.Position = UDim2.new(0, x, 0, y)
-		end
+		local dragging = false
+		local dragInput, dragStart, startPos
 
 		Orb.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				Tween(OrbScale, {Scale = 0.9}, 0.08)
 				dragging = true
 				dragStart = input.Position
 				startPos = Orb.Position
-				Tween(OrbScale, {Scale = 0.92}, 0.08)
 				input.Changed:Connect(function()
 					if input.UserInputState == Enum.UserInputState.End then
 						dragging = false
-						ClampOrb()
 						Tween(OrbScale, {Scale = 1}, 0.12)
 					end
 				end)
@@ -666,7 +651,7 @@ function Library:CreateWindow(cfg)
 		end)
 
 		UIS.InputChanged:Connect(function(input)
-			if dragging and input == dragInput and dragStart and startPos then
+			if input == dragInput and dragging and startPos and Orb.Visible then
 				local delta = input.Position - dragStart
 				Orb.Position = UDim2.new(
 					startPos.X.Scale,
@@ -677,22 +662,15 @@ function Library:CreateWindow(cfg)
 			end
 		end)
 
-		Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-			if Orb.Visible then
-				ClampOrb()
-			end
-		end)
-
 		task.spawn(function()
-			while Orb.Parent do
-				if Orb.Visible then
-					Tween(OrbScale, {Scale = 1.04}, 0.9)
-					Tween(OrbGlow, {Thickness = 2, Transparency = 0.35}, 0.9)
-					task.wait(0.9)
-					if not Orb.Visible then break end
-					Tween(OrbScale, {Scale = 1.00}, 0.9)
-					Tween(OrbGlow, {Thickness = 0, Transparency = 0.6}, 0.9)
-					task.wait(0.9)
+			while Orb and Orb.Parent do
+				if Orb.Visible and not dragging then
+					Tween(OrbScale, {Scale = 1.05}, 0.7)
+					task.wait(0.7)
+					if Orb and Orb.Parent and Orb.Visible and not dragging then
+						Tween(OrbScale, {Scale = 0.98}, 0.7)
+						task.wait(0.7)
+					end
 				else
 					task.wait(0.2)
 				end
@@ -1217,13 +1195,13 @@ function Library:CreateWindow(cfg)
 		CreateThemeButton(info.Label, info.Key)
 	end
 
-	local WidthSlider = CreateSlider(LayoutPanel, "Window Width", 340, 1400, State.Width, function(v)
+	local WidthSlider = CreateSlider(LayoutPanel, "Custom X Size", 340, 1400, State.Width, function(v)
 		State.Width = math.floor(v)
 		UpdateLayout()
 		Persist()
 	end, 1)
 
-	local HeightSlider = CreateSlider(LayoutPanel, "Window Height", 260, 900, State.Height, function(v)
+	local HeightSlider = CreateSlider(LayoutPanel, "Custom Y Size", 260, 900, State.Height, function(v)
 		State.Height = math.floor(v)
 		UpdateLayout()
 		Persist()
