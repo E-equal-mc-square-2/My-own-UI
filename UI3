@@ -619,6 +619,87 @@ function Library:CreateWindow(cfg)
 	})
 	Corner(Orb, 999)
 
+	local OrbScale = New("UIScale", {
+		Parent = Orb,
+		Scale = 1,
+	})
+
+	local OrbGlow = New("UIStroke", {
+		Parent = Orb,
+		Color = Color3.new(1, 1, 1),
+		Thickness = 0,
+		Transparency = 0.6,
+	})
+
+	-- orb drag + safe edge clamp
+	do
+		local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+
+		local function ClampOrb()
+			local vp = Camera and Camera.ViewportSize or Vector2.new(1280, 720)
+			local abs = Orb.AbsoluteSize
+			local x = Clamp(Orb.Position.X.Offset, 10, math.max(10, vp.X - abs.X - 10))
+			local y = Clamp(Orb.Position.Y.Offset, 10, math.max(10, vp.Y - abs.Y - 10))
+			Orb.Position = UDim2.new(0, x, 0, y)
+		end
+
+		Orb.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = Orb.Position
+				Tween(OrbScale, {Scale = 0.92}, 0.08)
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+						ClampOrb()
+						Tween(OrbScale, {Scale = 1}, 0.12)
+					end
+				end)
+			end
+		end)
+
+		Orb.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				dragInput = input
+			end
+		end)
+
+		UIS.InputChanged:Connect(function(input)
+			if dragging and input == dragInput and dragStart and startPos then
+				local delta = input.Position - dragStart
+				Orb.Position = UDim2.new(
+					startPos.X.Scale,
+					startPos.X.Offset + delta.X,
+					startPos.Y.Scale,
+					startPos.Y.Offset + delta.Y
+				)
+			end
+		end)
+
+		Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			if Orb.Visible then
+				ClampOrb()
+			end
+		end)
+
+		task.spawn(function()
+			while Orb.Parent do
+				if Orb.Visible then
+					Tween(OrbScale, {Scale = 1.04}, 0.9)
+					Tween(OrbGlow, {Thickness = 2, Transparency = 0.35}, 0.9)
+					task.wait(0.9)
+					if not Orb.Visible then break end
+					Tween(OrbScale, {Scale = 1.00}, 0.9)
+					Tween(OrbGlow, {Thickness = 0, Transparency = 0.6}, 0.9)
+					task.wait(0.9)
+				else
+					task.wait(0.2)
+				end
+			end
+		end)
+	end
+
 	local function SetHidden(hidden)
 		State.Hidden = hidden and true or false
 		Main.Visible = not State.Hidden
