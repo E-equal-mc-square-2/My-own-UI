@@ -1,10 +1,11 @@
--- Load Library
+-- ✅ SIMPLE EXAMPLE USING ALL ELEMENTS
+-- Load the fixed library
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
 
 -- Create Window
 local Window = Library:CreateWindow({
 	Title = "Kilometres UI X",
-	Subtitle = "All Elements Example",
+	Subtitle = "All Elements Demo",
 	Theme = "LiquidGlass",
 	Width = 750,
 	Height = 360,
@@ -12,39 +13,248 @@ local Window = Library:CreateWindow({
 	ToggleKey = Enum.KeyCode.RightShift,
 })
 
--- Create Tab
-local Tab = Window:CreateTab("Example")
+-- ========================================
+-- TAB 1: MAIN
+-- ========================================
+local MainTab = Window:CreateTab("Main")
 
--- Create Section
-local Section = Tab:CreateSection("Basic Elements")
+local BasicSection = MainTab:CreateSection("Basic Elements")
 
-Section:Info("This section shows every available element.")
+-- Info
+BasicSection:Info("📌 This shows all available elements")
 
-Section:Button("Click Me", function()
-	Window:Notify("Button", "You clicked the button!", 2)
+-- Button
+BasicSection:Button("Click Me", function()
+	Window:Notify("Button Clicked", "You pressed the button!", 2)
 end)
 
-Section:Toggle("Enable Feature", false, function(state)
-	print("Toggle State:", state)
+-- Toggle
+BasicSection:Toggle("Enable Feature", false, function(state)
+	print("Toggle is now:", state)
 end)
 
-Section:Slider("Power Level", 0, 100, 25, function(value)
+-- Slider
+BasicSection:Slider("Power Level", 0, 100, 50, function(value)
 	print("Slider Value:", value)
 end, 1)
 
-Section:Textbox("Enter Text", "Type something...", function(text)
-	print("Textbox:", text)
+-- Textbox
+BasicSection:Textbox("Enter Name", "Type here...", function(text)
+	print("Textbox Input:", text)
+	Window:Notify("Textbox", "You typed: " .. text, 2)
 end)
 
-Section:Dropdown("Select Mode", {
+-- Dropdown (NEW LIST STYLE)
+BasicSection:Dropdown("Select Mode", {
 	"Legit",
 	"Rage",
 	"Silent",
-	"Extreme"
+	"Instant Hit",
+	"Never Miss",
+	"Prediction",
+	"Ultra Lock"
 }, "Legit", function(selected)
-	print("Selected:", selected)
+	print("Selected Mode:", selected)
+	Window:Notify("Mode Changed", selected, 1.5)
 end)
 
--- ✅ IMPORTANT: Activate tab so elements show
-task.wait()
-Tab.LandButton.MouseButton1Click:Fire()
+local CombatSection = MainTab:CreateSection("Combat")
+
+CombatSection:Toggle("Aimbot", false, function(v)
+	print("Aimbot:", v)
+end)
+
+CombatSection:Toggle("Silent Aim", false, function(v)
+	print("Silent Aim:", v)
+end)
+
+CombatSection:Slider("FOV", 10, 500, 100, function(v)
+	print("FOV:", v)
+end, 5)
+
+CombatSection:Dropdown("Target Part", {
+	"Head",
+	"Torso",
+	"HumanoidRootPart",
+	"Random"
+}, "Head", function(v)
+	print("Target Part:", v)
+end)
+
+-- ========================================
+-- TAB 2: VISUALS
+-- ========================================
+local VisualTab = Window:CreateTab("Visuals")
+
+local ESPSection = VisualTab:CreateSection("ESP Settings")
+
+ESPSection:Toggle("Box ESP", false, function(v)
+	print("Box ESP:", v)
+end)
+
+ESPSection:Toggle("Name ESP", false, function(v)
+	print("Name ESP:", v)
+end)
+
+ESPSection:Toggle("Tracer ESP", false, function(v)
+	print("Tracer ESP:", v)
+end)
+
+ESPSection:Slider("ESP Distance", 100, 5000, 1000, function(v)
+	print("ESP Distance:", v)
+end, 50)
+
+ESPSection:Dropdown("ESP Color", {
+	"White",
+	"Red",
+	"Green",
+	"Blue",
+	"Yellow",
+	"Purple",
+	"Rainbow"
+}, "White", function(v)
+	print("ESP Color:", v)
+end)
+
+local ChamsSection = VisualTab:CreateSection("Chams")
+
+ChamsSection:Toggle("Enable Chams", false, function(v)
+	print("Chams:", v)
+end)
+
+ChamsSection:Slider("Transparency", 0, 100, 50, function(v)
+	print("Chams Transparency:", v)
+end, 5)
+
+-- ========================================
+-- TAB 3: MISC
+-- ========================================
+local MiscTab = Window:CreateTab("Misc")
+
+local PlayerSection = MiscTab:CreateSection("Player Mods")
+
+PlayerSection:Slider("WalkSpeed", 16, 200, 16, function(v)
+	print("WalkSpeed:", v)
+	-- game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+end, 1)
+
+PlayerSection:Slider("JumpPower", 50, 300, 50, function(v)
+	print("JumpPower:", v)
+	-- game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
+end, 5)
+
+PlayerSection:Toggle("Infinite Jump", false, function(v)
+	print("Infinite Jump:", v)
+end)
+
+PlayerSection:Toggle("No Clip", false, function(v)
+	print("No Clip:", v)
+end)
+
+local ServerSection = MiscTab:CreateSection("Server")
+
+ServerSection:Textbox("Webhook URL", "https://discord.com/api/webhooks/...", function(v)
+	print("Webhook:", v)
+end)
+
+ServerSection:Dropdown("Server Hop Mode", {
+	"Random",
+	"Smallest",
+	"Largest",
+	"Best Ping",
+	"Best FPS"
+}, "Random", function(v)
+	print("Server Hop Mode:", v)
+end)
+
+ServerSection:Button("Server Hop", function()
+	Window:Notify("Server Hop", "Hopping to new server...", 2)
+	-- Your server hop code here
+end)
+
+ServerSection:Button("Rejoin Server", function()
+	Window:Notify("Rejoin", "Rejoining...", 2)
+	-- game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+end)
+
+local UISection = MiscTab:CreateSection("UI Controls")
+
+UISection:Info("🎨 Theme and window controls")
+
+UISection:Button("Change Theme: Midnight", function()
+	Window:SetTheme("Midnight")
+	Window:Notify("Theme", "Changed to Midnight", 1.5)
+end)
+
+UISection:Button("Change Theme: CyberNeo", function()
+	Window:SetTheme("CyberNeo")
+	Window:Notify("Theme", "Changed to CyberNeo", 1.5)
+end)
+
+UISection:Button("Resize 900x500", function()
+	Window:SetSize(900, 500)
+	Window:Notify("Resize", "Window resized", 1.5)
+end)
+
+UISection:Button("Hide UI", function()
+	Window:Hide()
+end)
+
+UISection:Button("Show UI", function()
+	Window:Show()
+end)
+
+UISection:Button("Print State", function()
+	local state = Window:GetState()
+	print("=== WINDOW STATE ===")
+	print("Theme:", state.ThemeName)
+	print("Width:", state.Width)
+	print("Height:", state.Height)
+	print("Save Settings:", state.SaveSettings)
+	print("Hidden:", state.Hidden)
+	print("Hotkey:", state.Hotkey)
+end)
+
+-- ========================================
+-- TAB 4: SETTINGS (Example)
+-- ========================================
+local SettingsTab = Window:CreateTab("Settings")
+
+local ConfigSection = SettingsTab:CreateSection("Configuration")
+
+ConfigSection:Info("💾 Config management example")
+
+ConfigSection:Textbox("Config Name", "MyConfig", function(v)
+	print("Config Name:", v)
+end)
+
+ConfigSection:Button("Save Config", function()
+	Window:Notify("Config", "Config saved!", 2)
+	-- Your save config code
+end)
+
+ConfigSection:Button("Load Config", function()
+	Window:Notify("Config", "Config loaded!", 2)
+	-- Your load config code
+end)
+
+ConfigSection:Button("Delete Config", function()
+	Window:Notify("Config", "Config deleted!", 2)
+	-- Your delete config code
+end)
+
+local CreditsSection = SettingsTab:CreateSection("Credits")
+
+CreditsSection:Info("👨‍💻 UI by Kilometres")
+CreditsSection:Info("🎨 Fixed & Enhanced")
+CreditsSection:Info("✅ All elements working")
+
+CreditsSection:Button("Join Discord", function()
+	Window:Notify("Discord", "Discord link copied!", 2)
+	-- setclipboard("discord.gg/yourlink")
+end)
+
+-- ========================================
+-- FINAL NOTIFICATION
+-- ========================================
+Window:Notify("Welcome", "UI loaded successfully!", 3)
