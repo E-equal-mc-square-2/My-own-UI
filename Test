@@ -1,250 +1,234 @@
---// ======================================================================
---// KILOMETRES UI X V3 - FULL EXAMPLE
---// Uses MOST elements from UI3
---// ======================================================================
+--// =========================================================
+--// KILOMETRES UI X V4 - FULL EXAMPLE
+--// Example Script Using ALL ELEMENTS
+--// =========================================================
 
-local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"
-))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
 
 --// WINDOW
 
 local Window = Library:CreateWindow({
-    Title = "Kilometres UI X",
-    Subtitle = "Ultimate Example",
-    Theme = "CyberNeo",
-    SaveSettings = true,
-    KeySystem = false
+	Title = "Kilometres UI X",
+	Subtitle = "Ultimate Showcase",
+	Theme = "Year3066",
+	SaveSettings = true,
+	KeySystem = true,
+	RequiredKey = "MaMa",
+	AutoOpenSettings = false
 })
 
---// TABS
-
-local Main = Library:CreateTab("Main")
-local Player = Library:CreateTab("Player")
-local Visuals = Library:CreateTab("Visuals")
-local Farming = Library:CreateTab("Farm")
-local Misc = Library:CreateTab("Misc")
-local Settings = Library:CreateTab("Settings")
-
---// ======================================================================
+--// =========================================================
 --// MAIN TAB
---// ======================================================================
+--// =========================================================
 
-local Welcome = Main:CreateSection("Welcome")
+local MainTab = Library:CreateTab("Main")
+local MainSection = MainTab:CreateSection("Main Features")
 
-Welcome:Button("Print Hello", function()
-    print("Hello from Kilometres UI X")
+MainSection:Button("Print Hello", function()
+	print("Hello from Kilometres UI X")
 end)
 
-Welcome:Toggle("Auto Notification", false, function(v)
-    print("Notification Toggle:", v)
+MainSection:Button("Rejoin Server", function()
+	game:GetService("TeleportService"):Teleport(game.PlaceId)
 end)
 
-Welcome:Slider("Notification Volume", 0, 100, 50, function(v)
-    print("Volume:", v)
+MainSection:Toggle("Auto Farm", false, function(v)
+	print("Auto Farm:", v)
 end)
 
-Welcome:Textbox("Custom Message", "Type message...", function(text)
-    print("Message:", text)
+MainSection:Toggle("Infinite Jump", false, function(v)
+	print("Infinite Jump:", v)
 end)
 
---// ======================================================================
---// PLAYER TAB
---// ======================================================================
+MainSection:Slider("WalkSpeed", 16, 100, 16, function(v)
+	game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+end, 1)
 
-local Character = Player:CreateSection("Character")
+MainSection:Slider("JumpPower", 50, 200, 50, function(v)
+	game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
+end, 1)
 
-Character:Slider("WalkSpeed", 16, 200, 16, function(v)
-    local hum = game.Players.LocalPlayer.Character and
-        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-
-    if hum then
-        hum.WalkSpeed = v
-    end
+MainSection:Textbox("Custom Chat", "Type message...", function(text)
+	game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
 end)
 
-Character:Slider("JumpPower", 50, 250, 50, function(v)
-    local hum = game.Players.LocalPlayer.Character and
-        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-
-    if hum then
-        hum.JumpPower = v
-    end
+MainSection:Textbox("Set Display Name", "Display name...", function(text)
+	print("Display Name:", text)
 end)
 
-Character:Toggle("Infinite Jump", false, function(v)
-    getgenv().InfiniteJump = v
-end)
-
-game:GetService("UserInputService").JumpRequest:Connect(function()
-    if getgenv().InfiniteJump then
-        local hum = game.Players.LocalPlayer.Character and
-            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-
-        if hum then
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
-Character:Button("Reset Character", function()
-    game.Players.LocalPlayer.Character:BreakJoints()
-end)
-
---// ======================================================================
+--// =========================================================
 --// VISUAL TAB
---// ======================================================================
+--// =========================================================
 
-local ESP = Visuals:CreateSection("ESP")
+local VisualTab = Library:CreateTab("Visuals")
+local ESPSection = VisualTab:CreateSection("ESP")
 
-ESP:Toggle("Player ESP", false, function(v)
-    print("ESP:", v)
+ESPSection:Toggle("Player ESP", false, function(v)
+	print("ESP Enabled:", v)
 end)
 
-ESP:Toggle("Box ESP", false, function(v)
-    print("Box ESP:", v)
+ESPSection:Toggle("Box ESP", false, function(v)
+	print("Box ESP:", v)
 end)
 
-ESP:Toggle("Tracer ESP", false, function(v)
-    print("Tracer ESP:", v)
+ESPSection:Toggle("Tracer ESP", false, function(v)
+	print("Tracer ESP:", v)
 end)
 
-ESP:Slider("ESP Distance", 50, 5000, 1000, function(v)
-    print("Distance:", v)
+ESPSection:Button("Refresh ESP", function()
+	print("Refreshing ESP...")
 end)
 
-ESP:Button("Refresh ESP", function()
-    print("Refreshing ESP...")
+ESPSection:Slider("ESP Distance", 100, 5000, 1000, function(v)
+	print("ESP Distance:", v)
+end, 50)
+
+local WorldSection = VisualTab:CreateSection("World")
+
+WorldSection:Slider("Brightness", 0, 10, 2, function(v)
+	game.Lighting.Brightness = v
+end, 0.1)
+
+WorldSection:Slider("Field Of View", 70, 120, 70, function(v)
+	workspace.CurrentCamera.FieldOfView = v
+end, 1)
+
+WorldSection:Toggle("FullBright", false, function(v)
+	if v then
+		game.Lighting.ClockTime = 12
+	else
+		game.Lighting.ClockTime = 18
+	end
 end)
 
---// ======================================================================
---// FARM TAB
---// ======================================================================
-
-local AutoFarm = Farming:CreateSection("Automation")
-
-AutoFarm:Toggle("Auto Farm", false, function(v)
-    getgenv().AutoFarm = v
-
-    task.spawn(function()
-        while getgenv().AutoFarm do
-            task.wait(1)
-            print("Auto Farming...")
-        end
-    end)
+WorldSection:Textbox("Skybox ID", "rbxassetid://", function(text)
+	print("Skybox:", text)
 end)
 
-AutoFarm:Toggle("Auto Sell", false, function(v)
-    print("Auto Sell:", v)
+--// =========================================================
+--// PLAYER TAB
+--// =========================================================
+
+local PlayerTab = Library:CreateTab("Player")
+
+local CharacterSection = PlayerTab:CreateSection("Character")
+
+CharacterSection:Button("Reset Character", function()
+	game.Players.LocalPlayer.Character:BreakJoints()
 end)
 
-AutoFarm:Slider("Farm Speed", 1, 50, 10, function(v)
-    print("Farm Speed:", v)
+CharacterSection:Toggle("Noclip", false, function(v)
+	print("Noclip:", v)
 end)
 
-AutoFarm:Textbox("Selected Mob", "Mob Name...", function(text)
-    print("Selected Mob:", text)
+CharacterSection:Toggle("Fly", false, function(v)
+	print("Fly:", v)
 end)
 
---// ======================================================================
---// MISC TAB
---// ======================================================================
+CharacterSection:Slider("Gravity", 0, 196, 196, function(v)
+	workspace.Gravity = v
+end, 1)
 
-local Utility = Misc:CreateSection("Utility")
-
-Utility:Button("Rejoin Server", function()
-    game:GetService("TeleportService"):Teleport(
-        game.PlaceId,
-        game.Players.LocalPlayer
-    )
+CharacterSection:Textbox("Animation ID", "Animation ID...", function(text)
+	print("Animation:", text)
 end)
 
-Utility:Button("Copy Discord", function()
-    if setclipboard then
-        setclipboard("discord.gg/example")
-    end
+local MiscPlayer = PlayerTab:CreateSection("Misc")
+
+MiscPlayer:Button("Copy Username", function()
+	if setclipboard then
+		setclipboard(game.Players.LocalPlayer.Name)
+	end
 end)
 
-Utility:Toggle("Anti AFK", true, function(v)
-
-    if v then
-        local vu = game:GetService("VirtualUser")
-
-        game.Players.LocalPlayer.Idled:Connect(function()
-            vu:CaptureController()
-            vu:ClickButton2(Vector2.new())
-        end)
-    end
+MiscPlayer:Button("Copy UserID", function()
+	if setclipboard then
+		setclipboard(tostring(game.Players.LocalPlayer.UserId))
+	end
 end)
 
-Utility:Textbox("Custom Executor Name", "Fluxus / Delta / Solara", function(text)
-    print("Executor:", text)
+MiscPlayer:Textbox("Teleport Player", "Username...", function(text)
+	print("Teleport to:", text)
 end)
 
---// ======================================================================
+--// =========================================================
 --// SETTINGS TAB
---// ======================================================================
+--// =========================================================
 
-local UI = Settings:CreateSection("UI Settings")
+local SettingsTab = Library:CreateTab("Settings")
 
-UI:Button("Theme: Default", function()
-    Window:SetTheme("Default")
+local UISection = SettingsTab:CreateSection("UI Controls")
+
+UISection:Button("Hide UI", function()
+	Window:Hide()
 end)
 
-UI:Button("Theme: Liquid Glass", function()
-    Window:SetTheme("LiquidGlass")
+UISection:Button("Show UI", function()
+	Window:Show()
 end)
 
-UI:Button("Theme: Cyber Neo", function()
-    Window:SetTheme("CyberNeo")
+UISection:Button("Destroy UI", function()
+	Window:Destroy()
 end)
 
-UI:Button("Theme: 3066 Years", function()
-    Window:SetTheme("Year3066")
+UISection:Button("Cyber Theme", function()
+	Window:SetTheme("CyberNeo")
 end)
 
-UI:Button("Hide UI", function()
-    Window:Hide()
+UISection:Button("Midnight Theme", function()
+	Window:SetTheme("Midnight")
 end)
 
-UI:Button("Show UI", function()
-    Window:Show()
+UISection:Button("LiquidGlass Theme", function()
+	Window:SetTheme("LiquidGlass")
 end)
 
-UI:Slider("Window Width", 500, 1400, 900, function(v)
-    local state = Window:GetState()
+UISection:Slider("Window Width", 500, 1400, 900, function(v)
+	local State = Window:GetState()
+	Window:SetSize(v, State.Height)
+end, 1)
 
-    Window:SetSize(v, state.Height)
+UISection:Slider("Window Height", 300, 900, 620, function(v)
+	local State = Window:GetState()
+	Window:SetSize(State.Width, v)
+end, 1)
+
+UISection:Slider("Offset X", -500, 500, 0, function(v)
+	local State = Window:GetState()
+	Window:SetOffset(v, State.OffsetY)
+end, 1)
+
+UISection:Slider("Offset Y", -300, 300, 0, function(v)
+	local State = Window:GetState()
+	Window:SetOffset(State.OffsetX, v)
+end, 1)
+
+local InfoSection = SettingsTab:CreateSection("Information")
+
+InfoSection:Button("Print State", function()
+	print(Window:GetState())
 end)
 
-UI:Slider("Window Height", 300, 900, 620, function(v)
-    local state = Window:GetState()
-
-    Window:SetSize(state.Width, v)
+InfoSection:Textbox("Executor Name", "Type executor...", function(text)
+	print("Executor:", text)
 end)
 
-UI:Slider("Window Offset X", -500, 500, 0, function(v)
-    local state = Window:GetState()
-
-    Window:SetOffset(v, state.OffsetY)
+InfoSection:Toggle("Debug Mode", false, function(v)
+	print("Debug:", v)
 end)
 
-UI:Slider("Window Offset Y", -300, 300, 0, function(v)
-    local state = Window:GetState()
+InfoSection:Slider("UI Blur", 0, 50, 0, function(v)
+	print("Blur:", v)
+end, 1)
 
-    Window:SetOffset(state.OffsetX, v)
+--// =========================================================
+--// AUTO NOTIFICATION
+--// =========================================================
+
+task.spawn(function()
+	task.wait(1)
+
+	print("Kilometres UI X Loaded Successfully")
+	print("Landscape + Portrait Supported")
+	print("Orb + Settings + Themes Enabled")
 end)
-
-UI:Textbox("Base64 Key", "Paste Base64...", function(text)
-    print("Base64:", text)
-end)
-
-UI:Button("Destroy UI", function()
-    Window:Destroy()
-end)
-
---// ======================================================================
---// STARTUP MESSAGE
---// ======================================================================
-
-print("Kilometres UI X Example Loaded")
