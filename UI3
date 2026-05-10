@@ -367,6 +367,24 @@ function Library:CreateWindow(cfg)
 		ZIndex = 6,
 	})
 
+	local DefaultsButton = New("TextButton", {
+		Parent = Topbar,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -92, 0, 13),
+		Size = UDim2.fromOffset(36, 32),
+		BackgroundColor3 = Theme().Surface2,
+		BackgroundTransparency = Theme().Surface2Transparency,
+		BorderSizePixel = 0,
+		Text = "D",
+		TextSize = 15,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = Theme().Text,
+		AutoButtonColor = false,
+		ZIndex = 8,
+	})
+	Corner(DefaultsButton, 10)
+	Stroke(DefaultsButton, Theme().Stroke, 1)
+
 	local SettingsButton = New("TextButton", {
 		Parent = Topbar,
 		AnchorPoint = Vector2.new(1, 0),
@@ -720,6 +738,20 @@ function Library:CreateWindow(cfg)
 	Camera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateLayout)
 
 	-- top buttons
+	DefaultsButton.MouseButton1Click:Connect(function()
+		SetTheme("Default")
+		State.Width = 900
+		State.Height = 620
+		WidthSlider.Set(State.Width)
+		HeightSlider.Set(State.Height)
+		SetHidden(false)
+		SettingsOverlay.Visible = false
+		PageHolder.Visible = true
+		UpdateLayout()
+		Persist()
+		Notify("Defaults", "UI restored to default settings.", 2)
+	end)
+
 	SettingsButton.MouseButton1Click:Connect(function()
 		if not State.Hidden then
 			local newState = not SettingsOverlay.Visible
