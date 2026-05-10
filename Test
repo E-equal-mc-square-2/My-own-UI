@@ -1,13 +1,14 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
+local Library = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"
+))()
 
 local Window = Library:CreateWindow({
     Title = "Kilometres UI X",
-    Subtitle = "Ultimate Example Showcase",
+    Subtitle = "Ultimate Showcase",
     Theme = "LiquidGlass",
-    Width = 980,
-    Height = 640,
+    Width = 750,
+    Height = 360,
     SaveSettings = true,
-    ToggleKey = Enum.KeyCode.RightShift
 })
 
 --// =====================================================
@@ -16,151 +17,142 @@ local Window = Library:CreateWindow({
 
 local MainTab = Library:CreateTab("Main")
 
-local CombatSection = MainTab:CreateSection("Combat")
+local Combat = MainTab:CreateSection("Combat")
 
-CombatSection:Info("Combat system configuration")
+Combat:Info("Combat system showcase")
 
-CombatSection:Button("Print Hello", function()
-    Window:Notify("Button", "Hello from button!", 2)
-    print("Hello!")
+Combat:Button("Kill Aura", function()
+    Window:Notify("Combat", "Kill Aura Activated", 2)
 end)
 
-CombatSection:Toggle("Auto Attack", false, function(v)
-    print("Auto Attack:", v)
-    Window:Notify("Toggle", "Auto Attack = "..tostring(v), 2)
-end)
-
-CombatSection:Toggle("Silent Aim", true, function(v)
+Combat:Toggle("Silent Aim", false, function(v)
     print("Silent Aim:", v)
 end)
 
-CombatSection:Slider("Attack Range", 1, 500, 120, function(v)
-    print("Range:", v)
+Combat:Slider("FOV Size", 50, 500, 120, function(v)
+    print("FOV:", v)
 end, 1)
 
-CombatSection:Slider("Attack Speed", 1, 20, 5, function(v)
-    print("Speed:", v)
-end, 0.1)
-
-CombatSection:Textbox("Target Name", "Enter player...", function(text)
-    print("Target:", text)
+Combat:Textbox("Target Player", "Enter username...", function(txt)
+    print("Target:", txt)
 end)
 
-CombatSection:Dropdown(
-    "Combat Mode",
-    {"Legit", "Rage", "Hybrid", "Stealth"},
+Combat:Dropdown("Aim Part", {
+    "Head",
+    "Torso",
+    "HumanoidRootPart"
+}, "Head", function(v)
+    print("Aim Part:", v)
+end)
+
+Combat:List("Aim Mode", {
+    "Visible",
+    "Instant",
+    "Never Miss",
     "Legit",
-    function(choice)
-        print("Mode:", choice)
-    end
-)
-
---// =====================================================
---// VISUAL TAB
---// =====================================================
-
-local VisualTab = Library:CreateTab("Visuals")
-
-local ESPSection = VisualTab:CreateSection("ESP")
-
-ESPSection:Toggle("Box ESP", true, function(v)
-    print("Box ESP:", v)
-end)
-
-ESPSection:Toggle("Tracer ESP", false, function(v)
-    print("Tracer ESP:", v)
-end)
-
-ESPSection:Toggle("Health Bar", true, function(v)
-    print("Health:", v)
-end)
-
-ESPSection:Slider("ESP Distance", 50, 5000, 1200, function(v)
-    print("ESP Distance:", v)
-end)
-
-ESPSection:Dropdown(
-    "ESP Color",
-    {"Purple", "Blue", "Green", "White", "Red"},
-    "Purple",
-    function(v)
-        print("ESP Color:", v)
-    end
-)
-
-local CameraSection = VisualTab:CreateSection("Camera")
-
-CameraSection:Slider("Field Of View", 60, 120, 80, function(v)
-    workspace.CurrentCamera.FieldOfView = v
-end)
-
-CameraSection:Button("Reset FOV", function()
-    workspace.CurrentCamera.FieldOfView = 70
-    Window:Notify("Camera", "FOV Reset", 2)
-end)
-
-CameraSection:Textbox("Custom Skybox", "Asset ID", function(v)
-    print("Skybox ID:", v)
+    "Aggressive",
+    "Prediction",
+    "Closest",
+    "Silent",
+    "Mouse",
+    "Dynamic",
+    "Camera",
+    "Resolver",
+    "Sticky",
+    "Randomizer",
+    "Ultra"
+}, "Visible", function(v)
+    print("Aim Mode:", v)
 end)
 
 --// =====================================================
---// PLAYER TAB
+--// TAB 2
 --// =====================================================
 
 local PlayerTab = Library:CreateTab("Player")
 
-local MovementSection = PlayerTab:CreateSection("Movement")
+local Movement = PlayerTab:CreateSection("Movement")
 
-MovementSection:Toggle("Infinite Jump", false, function(v)
-    print("Infinite Jump:", v)
+Movement:Toggle("Speed Enabled", false, function(v)
+    print(v)
 end)
 
-MovementSection:Toggle("Fly", false, function(v)
-    print("Fly:", v)
+Movement:Slider("WalkSpeed", 16, 300, 50, function(v)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
 end)
 
-MovementSection:Slider("WalkSpeed", 16, 200, 16, function(v)
-    local char = game.Players.LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = v
-    end
+Movement:Slider("JumpPower", 50, 300, 80, function(v)
+    game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
 end)
 
-MovementSection:Slider("JumpPower", 50, 300, 50, function(v)
-    local char = game.Players.LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.JumpPower = v
-    end
+Movement:Button("Reset Movement", function()
+    local hum = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+
+    hum.WalkSpeed = 16
+    hum.JumpPower = 50
+
+    Window:Notify("Player", "Movement Reset", 2)
 end)
 
-MovementSection:Button("Reset Character", function()
-    game.Players.LocalPlayer.Character:BreakJoints()
+local Misc = PlayerTab:CreateSection("Misc")
+
+Misc:Textbox("Custom Message", "Type something...", function(txt)
+    Window:Notify("Textbox", txt, 3)
 end)
 
-local MiscSection = PlayerTab:CreateSection("Misc")
-
-MiscSection:Textbox("Chat Message", "Type message...", function(v)
-    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(v, "All")
+Misc:Dropdown("Animation Pack", {
+    "Stylish",
+    "Zombie",
+    "Mage",
+    "Robot",
+    "Ninja"
+}, "Stylish", function(v)
+    print(v)
 end)
 
-MiscSection:Dropdown(
-    "Animation Pack",
-    {"Default", "Ninja", "Zombie", "Robot"},
-    "Default",
-    function(v)
-        print("Animation:", v)
-    end
-)
-
-MiscSection:Info("All player settings are local-side only.")
+Misc:Info("Dropdown cycles options")
 
 --// =====================================================
---// SETTINGS TAB
+--// TAB 3
+--// =====================================================
+
+local VisualTab = Library:CreateTab("Visuals")
+
+local ESP = VisualTab:CreateSection("ESP")
+
+ESP:Toggle("Box ESP", true, function(v)
+    print(v)
+end)
+
+ESP:Toggle("Name ESP", true, function(v)
+    print(v)
+end)
+
+ESP:Toggle("Tracer ESP", false, function(v)
+    print(v)
+end)
+
+ESP:Slider("ESP Distance", 50, 5000, 1000, function(v)
+    print(v)
+end)
+
+ESP:Dropdown("ESP Color", {
+    "Red",
+    "Green",
+    "Blue",
+    "Purple",
+    "Rainbow"
+}, "Purple", function(v)
+    print(v)
+end)
+
+--// =====================================================
+--// TAB 4
 --// =====================================================
 
 local SettingsTab = Library:CreateTab("Settings")
 
-local ThemeSection = SettingsTab:CreateSection("Themes")
+local ThemeSection = SettingsTab:CreateSection("Theme Tools")
 
 ThemeSection:Button("Default Theme", function()
     Window:SetTheme("Default")
@@ -182,29 +174,27 @@ ThemeSection:Button("Midnight", function()
     Window:SetTheme("Midnight")
 end)
 
-local UtilitySection = SettingsTab:CreateSection("Utilities")
+local WindowSection = SettingsTab:CreateSection("Window")
 
-UtilitySection:Button("Hide UI", function()
+WindowSection:Button("Hide UI", function()
     Window:Hide()
 end)
 
-UtilitySection:Button("Show Notification", function()
-    Window:Notify(
-        "Kilometres UI",
-        "This is a showcase notification.",
-        3
-    )
+WindowSection:Button("Show UI", function()
+    Window:Show()
 end)
 
-UtilitySection:Button("Resize Window", function()
-    Window:SetSize(1200, 720)
+WindowSection:Button("Resize Small", function()
+    Window:SetSize(600, 320)
 end)
 
-UtilitySection:Button("Print State", function()
+WindowSection:Button("Resize Large", function()
+    Window:SetSize(1000, 600)
+end)
+
+WindowSection:Button("Print State", function()
     print(Window:GetState())
 end)
-
-UtilitySection:Info("Press RightShift to toggle UI.")
 
 --// =====================================================
 --// STARTUP
@@ -212,6 +202,6 @@ UtilitySection:Info("Press RightShift to toggle UI.")
 
 Window:Notify(
     "Kilometres UI X",
-    "Loaded successfully.",
-    3
+    "Loaded Example Showcase Successfully",
+    4
 )
