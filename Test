@@ -1,243 +1,217 @@
---// ======================================================================
---// KILOMETRES UI X V5 EXAMPLE
---// FULL SHOWCASE USING ALL ELEMENTS
---// FOR UI3
---// ======================================================================
-
-local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"
-))()
-
---// WINDOW
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/E-equal-mc-square-2/KilometresUI/refs/heads/main/UI3"))()
 
 local Window = Library:CreateWindow({
     Title = "Kilometres UI X",
-    Subtitle = "V5 Showcase",
+    Subtitle = "Ultimate Example Showcase",
     Theme = "LiquidGlass",
-    Width = 920,
-    Height = 650,
-    SaveSettings = true
+    Width = 980,
+    Height = 640,
+    SaveSettings = true,
+    ToggleKey = Enum.KeyCode.RightShift
 })
 
---// ======================================================================
---// TAB : PLAYER
---// ======================================================================
+--// =====================================================
+--// TAB 1
+--// =====================================================
 
-local PlayerTab = Library:CreateTab("Player")
+local MainTab = Library:CreateTab("Main")
 
-local Character = PlayerTab:CreateSection("Character")
+local CombatSection = MainTab:CreateSection("Combat")
 
-Character:Button("Reset Character", function()
-    game.Players.LocalPlayer.Character:BreakJoints()
+CombatSection:Info("Combat system configuration")
+
+CombatSection:Button("Print Hello", function()
+    Window:Notify("Button", "Hello from button!", 2)
+    print("Hello!")
 end)
 
-Character:Toggle("Noclip", false, function(v)
-    print("Noclip:", v)
+CombatSection:Toggle("Auto Attack", false, function(v)
+    print("Auto Attack:", v)
+    Window:Notify("Toggle", "Auto Attack = "..tostring(v), 2)
 end)
 
-Character:Toggle("Fly", false, function(v)
-    print("Fly:", v)
-end)
-
-Character:Slider("WalkSpeed", 16, 200, 16, function(v)
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-end, 1)
-
-Character:Slider("JumpPower", 50, 300, 50, function(v)
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
-end, 1)
-
-Character:Textbox("Custom Name", "Type name...", function(text)
-    print("Name:", text)
-end)
-
---// ======================================================================
---// TAB : VISUALS
---// ======================================================================
-
-local VisualsTab = Library:CreateTab("Visuals")
-
-local ESP = VisualsTab:CreateSection("ESP")
-
-ESP:Toggle("Player ESP", false, function(v)
-    print("Player ESP:", v)
-end)
-
-ESP:Toggle("Box ESP", false, function(v)
-    print("Box ESP:", v)
-end)
-
-ESP:Toggle("Tracer ESP", false, function(v)
-    print("Tracer ESP:", v)
-end)
-
-ESP:Slider("ESP Distance", 50, 5000, 1000, function(v)
-    print("Distance:", v)
-end, 50)
-
-ESP:Button("Refresh ESP", function()
-    print("ESP Refreshed")
-end)
-
-local Lighting = VisualsTab:CreateSection("Lighting")
-
-Lighting:Slider("Brightness", 0, 10, 2, function(v)
-    game:GetService("Lighting").Brightness = v
-end, 0.1)
-
-Lighting:Slider("Clock Time", 0, 24, 14, function(v)
-    game:GetService("Lighting").ClockTime = v
-end, 0.1)
-
-Lighting:Toggle("FullBright", false, function(v)
-    print("FullBright:", v)
-end)
-
---// ======================================================================
---// TAB : COMBAT
---// ======================================================================
-
-local CombatTab = Library:CreateTab("Combat")
-
-local Combat = CombatTab:CreateSection("Combat")
-
-Combat:Toggle("Silent Aim", false, function(v)
+CombatSection:Toggle("Silent Aim", true, function(v)
     print("Silent Aim:", v)
 end)
 
-Combat:Toggle("Aim Assist", false, function(v)
-    print("Aim Assist:", v)
-end)
-
-Combat:Toggle("Trigger Bot", false, function(v)
-    print("Trigger Bot:", v)
-end)
-
-Combat:Slider("FOV Radius", 50, 600, 120, function(v)
-    print("FOV:", v)
+CombatSection:Slider("Attack Range", 1, 500, 120, function(v)
+    print("Range:", v)
 end, 1)
 
-Combat:Slider("Hit Chance", 0, 100, 85, function(v)
-    print("Chance:", v)
-end, 1)
+CombatSection:Slider("Attack Speed", 1, 20, 5, function(v)
+    print("Speed:", v)
+end, 0.1)
 
-Combat:Textbox("Target Player", "Username...", function(text)
+CombatSection:Textbox("Target Name", "Enter player...", function(text)
     print("Target:", text)
 end)
 
---// ======================================================================
---// TAB : TELEPORT
---// ======================================================================
+CombatSection:Dropdown(
+    "Combat Mode",
+    {"Legit", "Rage", "Hybrid", "Stealth"},
+    "Legit",
+    function(choice)
+        print("Mode:", choice)
+    end
+)
 
-local TeleportTab = Library:CreateTab("Teleport")
+--// =====================================================
+--// VISUAL TAB
+--// =====================================================
 
-local Teleports = TeleportTab:CreateSection("Locations")
+local VisualTab = Library:CreateTab("Visuals")
 
-Teleports:Button("Spawn", function()
-    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(0,5,0))
+local ESPSection = VisualTab:CreateSection("ESP")
+
+ESPSection:Toggle("Box ESP", true, function(v)
+    print("Box ESP:", v)
 end)
 
-Teleports:Button("Sky", function()
-    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(0,500,0))
+ESPSection:Toggle("Tracer ESP", false, function(v)
+    print("Tracer ESP:", v)
 end)
 
-Teleports:Button("Secret Room", function()
-    game.Players.LocalPlayer.Character:MoveTo(Vector3.new(200,20,150))
+ESPSection:Toggle("Health Bar", true, function(v)
+    print("Health:", v)
 end)
 
-Teleports:Textbox("Custom XYZ", "100, 50, 100", function(text)
-    print("Teleport:", text)
+ESPSection:Slider("ESP Distance", 50, 5000, 1200, function(v)
+    print("ESP Distance:", v)
 end)
 
---// ======================================================================
---// TAB : MISC
---// ======================================================================
+ESPSection:Dropdown(
+    "ESP Color",
+    {"Purple", "Blue", "Green", "White", "Red"},
+    "Purple",
+    function(v)
+        print("ESP Color:", v)
+    end
+)
 
-local MiscTab = Library:CreateTab("Misc")
+local CameraSection = VisualTab:CreateSection("Camera")
 
-local Misc = MiscTab:CreateSection("Utilities")
-
-Misc:Button("Rejoin Server", function()
-    game:GetService("TeleportService"):Teleport(
-        game.PlaceId,
-        game.Players.LocalPlayer
-    )
+CameraSection:Slider("Field Of View", 60, 120, 80, function(v)
+    workspace.CurrentCamera.FieldOfView = v
 end)
 
-Misc:Button("Copy Discord", function()
-    setclipboard("https://discord.gg/example")
+CameraSection:Button("Reset FOV", function()
+    workspace.CurrentCamera.FieldOfView = 70
+    Window:Notify("Camera", "FOV Reset", 2)
 end)
 
-Misc:Toggle("Anti AFK", true, function(v)
-    print("Anti AFK:", v)
+CameraSection:Textbox("Custom Skybox", "Asset ID", function(v)
+    print("Skybox ID:", v)
 end)
 
-Misc:Toggle("FPS Boost", false, function(v)
-    print("FPS Boost:", v)
+--// =====================================================
+--// PLAYER TAB
+--// =====================================================
+
+local PlayerTab = Library:CreateTab("Player")
+
+local MovementSection = PlayerTab:CreateSection("Movement")
+
+MovementSection:Toggle("Infinite Jump", false, function(v)
+    print("Infinite Jump:", v)
 end)
 
-Misc:Slider("UI Blur", 0, 25, 8, function(v)
-    print("Blur:", v)
+MovementSection:Toggle("Fly", false, function(v)
+    print("Fly:", v)
 end)
 
-Misc:Textbox("Execute Command", "/help", function(text)
-    print("Command:", text)
+MovementSection:Slider("WalkSpeed", 16, 200, 16, function(v)
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = v
+    end
 end)
 
---// ======================================================================
---// TAB : THEMES
---// ======================================================================
+MovementSection:Slider("JumpPower", 50, 300, 50, function(v)
+    local char = game.Players.LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.JumpPower = v
+    end
+end)
 
-local ThemeTab = Library:CreateTab("Themes")
+MovementSection:Button("Reset Character", function()
+    game.Players.LocalPlayer.Character:BreakJoints()
+end)
 
-local Themes = ThemeTab:CreateSection("Theme Presets")
+local MiscSection = PlayerTab:CreateSection("Misc")
 
-Themes:Button("Default", function()
+MiscSection:Textbox("Chat Message", "Type message...", function(v)
+    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(v, "All")
+end)
+
+MiscSection:Dropdown(
+    "Animation Pack",
+    {"Default", "Ninja", "Zombie", "Robot"},
+    "Default",
+    function(v)
+        print("Animation:", v)
+    end
+)
+
+MiscSection:Info("All player settings are local-side only.")
+
+--// =====================================================
+--// SETTINGS TAB
+--// =====================================================
+
+local SettingsTab = Library:CreateTab("Settings")
+
+local ThemeSection = SettingsTab:CreateSection("Themes")
+
+ThemeSection:Button("Default Theme", function()
     Window:SetTheme("Default")
 end)
 
-Themes:Button("Liquid Glass", function()
+ThemeSection:Button("Liquid Glass", function()
     Window:SetTheme("LiquidGlass")
 end)
 
-Themes:Button("Cyber Neo", function()
+ThemeSection:Button("Cyber Neo", function()
     Window:SetTheme("CyberNeo")
 end)
 
-Themes:Button("3066 Years", function()
+ThemeSection:Button("3066 Years", function()
     Window:SetTheme("Year3066")
 end)
 
-Themes:Button("Midnight", function()
+ThemeSection:Button("Midnight", function()
     Window:SetTheme("Midnight")
 end)
 
---// ======================================================================
---// TAB : WINDOW
---// ======================================================================
+local UtilitySection = SettingsTab:CreateSection("Utilities")
 
-local WindowTab = Library:CreateTab("Window")
-
-local WindowSection = WindowTab:CreateSection("Window Controls")
-
-WindowSection:Button("Hide UI", function()
+UtilitySection:Button("Hide UI", function()
     Window:Hide()
 end)
 
-WindowSection:Button("Show UI", function()
-    Window:Show()
+UtilitySection:Button("Show Notification", function()
+    Window:Notify(
+        "Kilometres UI",
+        "This is a showcase notification.",
+        3
+    )
 end)
 
-WindowSection:Button("Destroy UI", function()
-    Window:Destroy()
+UtilitySection:Button("Resize Window", function()
+    Window:SetSize(1200, 720)
 end)
 
-WindowSection:Slider("Window Width", 500, 1400, 920, function(v)
-    Window:SetSize(v, Window:GetState().Height)
+UtilitySection:Button("Print State", function()
+    print(Window:GetState())
 end)
 
-WindowSection:Slider("Window Height", 400, 900, 650, function(v)
-    Window:SetSize(Window:GetState().Width, v)
-end)
+UtilitySection:Info("Press RightShift to toggle UI.")
 
-print("Kilometres UI X Example Loaded")
+--// =====================================================
+--// STARTUP
+--// =====================================================
+
+Window:Notify(
+    "Kilometres UI X",
+    "Loaded successfully.",
+    3
+)
