@@ -370,8 +370,8 @@ function Library:CreateWindow(cfg)
 	local DefaultsButton = New("TextButton", {
 		Parent = Topbar,
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -92, 0, 13),
-		Size = UDim2.fromOffset(36, 32),
+		Position = UDim2.new(1, -88, 0, 15),
+		Size = UDim2.fromOffset(30, 28),
 		BackgroundColor3 = Theme().Surface2,
 		BackgroundTransparency = Theme().Surface2Transparency,
 		BorderSizePixel = 0,
@@ -388,8 +388,8 @@ function Library:CreateWindow(cfg)
 	local SettingsButton = New("TextButton", {
 		Parent = Topbar,
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -52, 0, 13),
-		Size = UDim2.fromOffset(36, 32),
+		Position = UDim2.new(1, -50, 0, 15),
+		Size = UDim2.fromOffset(30, 28),
 		BackgroundColor3 = Theme().Surface2,
 		BackgroundTransparency = Theme().Surface2Transparency,
 		BorderSizePixel = 0,
@@ -406,8 +406,8 @@ function Library:CreateWindow(cfg)
 	local HideButton = New("TextButton", {
 		Parent = Topbar,
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0, 13),
-		Size = UDim2.fromOffset(36, 32),
+		Position = UDim2.new(1, -12, 0, 15),
+		Size = UDim2.fromOffset(30, 28),
 		BackgroundColor3 = Theme().Surface2,
 		BackgroundTransparency = Theme().Surface2Transparency,
 		BorderSizePixel = 0,
