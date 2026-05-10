@@ -18,71 +18,33 @@ local Tab = Window:CreateTab("Example")
 -- Create Section
 local Section = Tab:CreateSection("Basic Elements")
 
--- Info
 Section:Info("This section shows every available element.")
 
--- Button
 Section:Button("Click Me", function()
 	Window:Notify("Button", "You clicked the button!", 2)
 end)
 
--- Toggle
 Section:Toggle("Enable Feature", false, function(state)
 	print("Toggle State:", state)
 end)
 
--- Slider
 Section:Slider("Power Level", 0, 100, 25, function(value)
 	print("Slider Value:", value)
 end, 1)
 
--- Textbox
 Section:Textbox("Enter Text", "Type something...", function(text)
 	print("Textbox:", text)
 end)
 
--- Dropdown (List style)
 Section:Dropdown("Select Mode", {
 	"Legit",
 	"Rage",
 	"Silent",
-	"Test Mode",
 	"Extreme"
 }, "Legit", function(selected)
 	print("Selected:", selected)
 end)
 
--- Second Section
-local Section2 = Tab:CreateSection("More Examples")
-
-Section2:Toggle("Auto Farm", false, function(v)
-	print("Auto Farm:", v)
-end)
-
-Section2:Slider("Speed", 16, 120, 30, function(v)
-	print("Speed:", v)
-end, 1)
-
-Section2:Textbox("Webhook URL", "https://...", function(v)
-	print("Webhook:", v)
-end)
-
-Section2:Button("Change Theme", function()
-	Window:SetTheme("Midnight")
-end)
-
-Section2:Button("Resize Window", function()
-	Window:SetSize(900, 500)
-end)
-
-Section2:Button("Print State", function()
-	print(Window:GetState())
-end)
-
-Section2:Button("Hide UI", function()
-	Window:Hide()
-end)
-
-Section2:Button("Show UI", function()
-	Window:Show()
-end)
+-- ✅ IMPORTANT: Activate tab so elements show
+task.wait()
+Tab.LandButton.MouseButton1Click:Fire()
