@@ -1653,8 +1653,49 @@ function Library:CreateWindow(cfg)
 	ClampOffsets()
 
 	task.defer(function()
-		if #Tabs > 0 and Tabs[1].LandButton then
-			Tabs[1].LandButton:Activate()
+		if Tabs[1] then
+			for _, t in ipairs(Tabs) do
+				t.Active = false
+				t.Page.Visible = false
+
+				Tween(t.LandButton, {
+					BackgroundColor3 = Theme().Surface2
+				}, 0.15)
+
+				Tween(t.PortButton, {
+					BackgroundColor3 = Theme().Surface2
+				}, 0.15)
+
+				Tween(t.LandLabel, {
+					TextColor3 = Theme().TextDim
+				}, 0.15)
+
+				Tween(t.PortLabel, {
+					TextColor3 = Theme().TextDim
+				}, 0.15)
+			end
+
+			local t = Tabs[1]
+			t.Active = true
+			t.Page.Visible = true
+
+			Tween(t.LandButton, {
+				BackgroundColor3 = Theme().Accent
+			}, 0.15)
+
+			Tween(t.PortButton, {
+				BackgroundColor3 = Theme().Accent
+			}, 0.15)
+
+			Tween(t.LandLabel, {
+				TextColor3 = Color3.new(1,1,1)
+			}, 0.15)
+
+			Tween(t.PortLabel, {
+				TextColor3 = Color3.new(1,1,1)
+			}, 0.15)
+
+			State.ActiveTab = t
 		end
 	end)
 
