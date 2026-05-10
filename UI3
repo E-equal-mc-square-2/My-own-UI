@@ -234,48 +234,20 @@ function Library:CreateWindow(cfg)
 		TryWriteFile(SaveFile, HttpService:JSONEncode(payload))
 	end
 
-	local DefaultSettings = {
-		ThemeName = "LiquidGlass",
-		Width = 750,
-		Height = 360,
-		SaveSettings = true,
-		Hotkey = "Enum.KeyCode.RightShift",
-	}
-
 	local function LoadPersisted()
 		if not State.SaveSettings then return end
-
 		local raw = TryReadFile(SaveFile)
-		if not raw then
-			State.ThemeName = DefaultSettings.ThemeName
-			State.Width = DefaultSettings.Width
-			State.Height = DefaultSettings.Height
-			State.SaveSettings = DefaultSettings.SaveSettings
-			State.Hotkey = DefaultSettings.Hotkey
-			TryWriteFile(SaveFile, HttpService:JSONEncode(DefaultSettings))
-			return
-		end
-
+		if not raw then return end
 		local ok, data = pcall(function()
 			return HttpService:JSONDecode(raw)
 		end)
 		if ok and type(data) == "table" then
 			if type(data.ThemeName) == "string" and Themes[data.ThemeName] then
 				State.ThemeName = data.ThemeName
-			else
-				State.ThemeName = DefaultSettings.ThemeName
 			end
-			if type(data.Width) == "number" then State.Width = Clamp(data.Width, 340, 1400) else State.Width = DefaultSettings.Width end
-			if type(data.Height) == "number" then State.Height = Clamp(data.Height, 260, 900) else State.Height = DefaultSettings.Height end
-			if type(data.SaveSettings) == "boolean" then State.SaveSettings = data.SaveSettings else State.SaveSettings = DefaultSettings.SaveSettings end
-			if type(data.Hotkey) == "string" then State.Hotkey = data.Hotkey else State.Hotkey = DefaultSettings.Hotkey end
-		else
-			State.ThemeName = DefaultSettings.ThemeName
-			State.Width = DefaultSettings.Width
-			State.Height = DefaultSettings.Height
-			State.SaveSettings = DefaultSettings.SaveSettings
-			State.Hotkey = DefaultSettings.Hotkey
-			TryWriteFile(SaveFile, HttpService:JSONEncode(DefaultSettings))
+			if type(data.Width) == "number" then State.Width = Clamp(data.Width, 340, 1400) end
+			if type(data.Height) == "number" then State.Height = Clamp(data.Height, 260, 900) end
+			if type(data.SaveSettings) == "boolean" then State.SaveSettings = data.SaveSettings end
 		end
 	end
 
@@ -1202,107 +1174,6 @@ function Library:CreateWindow(cfg)
 		return {Frame = wrap, Get = function() return options[index] end}
 	end
 
-	local function CreateList(parent, text, options, default, callback)
-		options = options or {}
-		local selected = default
-		if selected == nil and #options > 0 then
-			selected = options[1]
-		end
-
-		local wrap = New("Frame", {
-			Parent = parent,
-			Size = UDim2.new(1, 0, 0, 150),
-			BackgroundColor3 = Theme().Surface2,
-			BackgroundTransparency = Theme().Surface2Transparency,
-			BorderSizePixel = 0,
-			ZIndex = 90,
-		})
-		Corner(wrap, 12)
-		Stroke(wrap, Theme().Stroke, 1)
-
-		local label = New("TextLabel", {
-			Parent = wrap,
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(14, 8),
-			Size = UDim2.new(1, -28, 0, 18),
-			Text = text,
-			TextColor3 = Theme().Text,
-			TextSize = 14,
-			Font = Enum.Font.GothamBold,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 91,
-		})
-
-		local list = New("ScrollingFrame", {
-			Parent = wrap,
-			Position = UDim2.fromOffset(12, 34),
-			Size = UDim2.new(1, -24, 1, -46),
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 4,
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			CanvasSize = UDim2.fromOffset(0, 0),
-			ZIndex = 91,
-		})
-
-		New("UIListLayout", {Parent = list, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder})
-
-		local function setSelected(v)
-			selected = v
-			if callback then callback(v) end
-			Persist()
-			for _, child in ipairs(list:GetChildren()) do
-				if child:IsA("TextButton") then
-					child.BackgroundColor3 = (child.Text == tostring(selected)) and Theme().Accent or Theme().Surface
-					child.TextColor3 = (child.Text == tostring(selected)) and Color3.new(1,1,1) or Theme().Text
-				end
-			end
-		end
-
-		for _, item in ipairs(options) do
-			local itemBtn = New("TextButton", {
-				Parent = list,
-				Size = UDim2.new(1, 0, 0, 32),
-				BackgroundColor3 = (item == selected) and Theme().Accent or Theme().Surface,
-				BackgroundTransparency = Theme().SurfaceTransparency,
-				BorderSizePixel = 0,
-				Text = tostring(item),
-				TextColor3 = (item == selected) and Color3.new(1,1,1) or Theme().Text,
-				TextSize = 13,
-				Font = Enum.Font.GothamMedium,
-				AutoButtonColor = false,
-				ZIndex = 92,
-			})
-			Corner(itemBtn, 10)
-			Stroke(itemBtn, Theme().Stroke, 1)
-			itemBtn.MouseButton1Click:Connect(function()
-				setSelected(item)
-			end)
-		end
-
-		AddRefresher(function()
-			wrap.BackgroundColor3 = Theme().Surface2
-			wrap.BackgroundTransparency = Theme().Surface2Transparency
-			label.TextColor3 = Theme().Text
-			Stroke(wrap, Theme().Stroke, 1)
-			for _, child in ipairs(list:GetChildren()) do
-				if child:IsA("TextButton") then
-					child.BackgroundColor3 = (child.Text == tostring(selected)) and Theme().Accent or Theme().Surface
-					child.BackgroundTransparency = Theme().SurfaceTransparency
-					child.TextColor3 = (child.Text == tostring(selected)) and Color3.new(1,1,1) or Theme().Text
-					Stroke(child, Theme().Stroke, 1)
-				end
-			end
-		end)
-
-		return {
-			Frame = wrap,
-			Get = function() return selected end,
-			Set = setSelected,
-		}
-	end
-	end
-
 	local function CreateInfo(parent, text)
 		local lbl = New("TextLabel", {
 			Parent = parent,
@@ -1607,9 +1478,6 @@ function Library:CreateWindow(cfg)
 			function Section:Dropdown(text, options, default, callback)
 				return CreateDropdown(Content, text, options, default, callback)
 			end
-			function Section:List(text, options, default, callback)
-				return CreateList(Content, text, options, default, callback)
-			end
 			function Section:Info(text)
 				return CreateInfo(Content, text)
 			end
@@ -1653,49 +1521,8 @@ function Library:CreateWindow(cfg)
 	ClampOffsets()
 
 	task.defer(function()
-		if Tabs[1] then
-			for _, t in ipairs(Tabs) do
-				t.Active = false
-				t.Page.Visible = false
-
-				Tween(t.LandButton, {
-					BackgroundColor3 = Theme().Surface2
-				}, 0.15)
-
-				Tween(t.PortButton, {
-					BackgroundColor3 = Theme().Surface2
-				}, 0.15)
-
-				Tween(t.LandLabel, {
-					TextColor3 = Theme().TextDim
-				}, 0.15)
-
-				Tween(t.PortLabel, {
-					TextColor3 = Theme().TextDim
-				}, 0.15)
-			end
-
-			local t = Tabs[1]
-			t.Active = true
-			t.Page.Visible = true
-
-			Tween(t.LandButton, {
-				BackgroundColor3 = Theme().Accent
-			}, 0.15)
-
-			Tween(t.PortButton, {
-				BackgroundColor3 = Theme().Accent
-			}, 0.15)
-
-			Tween(t.LandLabel, {
-				TextColor3 = Color3.new(1,1,1)
-			}, 0.15)
-
-			Tween(t.PortLabel, {
-				TextColor3 = Color3.new(1,1,1)
-			}, 0.15)
-
-			State.ActiveTab = t
+		if #Tabs > 0 and Tabs[1].LandButton then
+			Tabs[1].LandButton:Activate()
 		end
 	end)
 
