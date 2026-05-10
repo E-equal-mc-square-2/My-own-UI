@@ -235,21 +235,30 @@ function Library:CreateWindow(cfg)
 	end
 
 	local function LoadPersisted()
-		if not State.SaveSettings then return end
-		local raw = TryReadFile(SaveFile)
-		if not raw then return end
-		local ok, data = pcall(function()
-			return HttpService:JSONDecode(raw)
-		end)
-		if ok and type(data) == "table" then
-			if type(data.ThemeName) == "string" and Themes[data.ThemeName] then
-				State.ThemeName = data.ThemeName
-			end
-			if type(data.Width) == "number" then State.Width = Clamp(data.Width, 340, 1400) end
-			if type(data.Height) == "number" then State.Height = Clamp(data.Height, 260, 900) end
-			if type(data.SaveSettings) == "boolean" then State.SaveSettings = data.SaveSettings end
-		end
+	local raw = TryReadFile(SaveFile)
+
+	if not raw then
+		-- ✅ Default settings if no file
+		State.ThemeName = "LiquidGlass"
+		State.Width = 750
+		State.Height = 360
+		State.SaveSettings = true
+		State.Hotkey = Enum.KeyCode.RightShift
+		return
 	end
+
+	local ok, data = pcall(function()
+		return HttpService:JSONDecode(raw)
+	end)
+
+	if ok and type(data) == "table" then
+		State.ThemeName = data.ThemeName or "LiquidGlass"
+		State.Width = Clamp(data.Width or 750, 340, 1400)
+		State.Height = Clamp(data.Height or 360, 260, 900)
+		State.SaveSettings = data.SaveSettings ~= false
+		State.Hotkey = Enum.KeyCode.RightShift
+	end
+end
 
 	LoadPersisted()
 
@@ -1105,93 +1114,158 @@ function Library:CreateWindow(cfg)
 	end
 
 	local function CreateDropdown(parent, text, options, default, callback)
-		options = options or {}
-		local index = 1
-		for i, v in ipairs(options) do
-			if v == default then
-				index = i
-				break
-			end
-		end
+	options = options or {}
 
-		local wrap = New("TextButton", {
-			Parent = parent,
-			Size = UDim2.new(1, 0, 0, 50),
+	local selected = default or options[1]
+
+	local Holder = New("Frame", {
+		Parent = parent,
+		Size = UDim2.new(1, 0, 0, 50),
+		BackgroundColor3 = Theme().Surface2,
+		BackgroundTransparency = Theme().Surface2Transparency,
+		BorderSizePixel = 0,
+		ZIndex = 90,
+	})
+	Corner(Holder, 12)
+	Stroke(Holder, Theme().Stroke, 1)
+
+	local Label = New("TextLabel", {
+		Parent = Holder,
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(14, 0),
+		Size = UDim2.new(1, -100, 1, 0),
+		Text = text,
+		TextColor3 = Theme().Text,
+		TextSize = 14,
+		Font = Enum.Font.GothamMedium,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 91,
+	})
+
+	local ValueLabel = New("TextLabel", {
+		Parent = Holder,
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -14, 0.5, 0),
+		Size = UDim2.fromOffset(180, 20),
+		Text = tostring(selected or ""),
+		TextColor3 = Theme().TextDim,
+		TextSize = 13,
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		ZIndex = 91,
+	})
+
+	local ToggleButton = New("TextButton", {
+		Parent = Holder,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1,1),
+		Text = "",
+		ZIndex = 92,
+	})
+
+	local DropFrame = New("Frame", {
+		Parent = Holder,
+		Position = UDim2.new(0, 0, 1, 6),
+		Size = UDim2.new(1, 0, 0, 0),
+		BackgroundColor3 = Theme().Surface,
+		BackgroundTransparency = Theme().SurfaceTransparency,
+		BorderSizePixel = 0,
+		Visible = false,
+		ZIndex = 200,
+	})
+	Corner(DropFrame, 12)
+	Stroke(DropFrame, Theme().Stroke, 1)
+
+	local List = New("ScrollingFrame", {
+		Parent = DropFrame,
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		CanvasSize = UDim2.new(0,0,0,0),
+		ScrollBarThickness = 4,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ZIndex = 201,
+	})
+	New("UIListLayout", {
+		Parent = List,
+		Padding = UDim.new(0,6),
+		SortOrder = Enum.SortOrder.LayoutOrder
+	})
+	New("UIPadding", {
+		Parent = List,
+		PaddingTop = UDim.new(0,8),
+		PaddingBottom = UDim.new(0,8),
+		PaddingLeft = UDim.new(0,8),
+		PaddingRight = UDim.new(0,8)
+	})
+
+	local opened = false
+
+	local function Toggle(state)
+		opened = state
+		DropFrame.Visible = opened
+
+		if opened then
+			local sizeY = math.min(#options * 36 + 16, 200)
+			Tween(DropFrame, {Size = UDim2.new(1,0,0,sizeY)}, 0.2)
+		else
+			Tween(DropFrame, {Size = UDim2.new(1,0,0,0)}, 0.15)
+			task.delay(0.15,function()
+				if not opened then
+					DropFrame.Visible = false
+				end
+			end)
+		end
+	end
+
+	for _,option in ipairs(options) do
+		local Btn = New("TextButton", {
+			Parent = List,
+			Size = UDim2.new(1,0,0,30),
 			BackgroundColor3 = Theme().Surface2,
 			BackgroundTransparency = Theme().Surface2Transparency,
 			BorderSizePixel = 0,
-			Text = "",
-			AutoButtonColor = false,
-			ZIndex = 90,
-		})
-		Corner(wrap, 12)
-		Stroke(wrap, Theme().Stroke, 1)
-
-		local label = New("TextLabel", {
-			Parent = wrap,
-			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(14, 0),
-			Size = UDim2.new(1, -80, 1, 0),
-			Text = text,
+			Text = tostring(option),
 			TextColor3 = Theme().Text,
-			TextSize = 14,
-			Font = Enum.Font.GothamMedium,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 91,
-		})
-
-		local valueLabel = New("TextLabel", {
-			Parent = wrap,
-			BackgroundTransparency = 1,
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -14, 0.5, 0),
-			Size = UDim2.fromOffset(180, 20),
-			Text = tostring(options[index] or ""),
-			TextColor3 = Theme().TextDim,
 			TextSize = 13,
 			Font = Enum.Font.Gotham,
-			TextXAlignment = Enum.TextXAlignment.Right,
-			ZIndex = 91,
+			AutoButtonColor = false,
+			ZIndex = 202,
 		})
+		Corner(Btn,8)
 
-		wrap.MouseButton1Click:Connect(function()
-			if #options == 0 then return end
-			index += 1
-			if index > #options then index = 1 end
-			valueLabel.Text = tostring(options[index])
-			if callback then callback(options[index], index) end
-			Persist()
+		Btn.MouseButton1Click:Connect(function()
+			selected = option
+			ValueLabel.Text = tostring(option)
+			Toggle(false)
+			if callback then
+				callback(option)
+			end
 		end)
-
-		AddRefresher(function()
-			wrap.BackgroundColor3 = Theme().Surface2
-			wrap.BackgroundTransparency = Theme().Surface2Transparency
-			label.TextColor3 = Theme().Text
-			valueLabel.TextColor3 = Theme().TextDim
-			Stroke(wrap, Theme().Stroke, 1)
-		end)
-
-		return {Frame = wrap, Get = function() return options[index] end}
 	end
 
-	local function CreateInfo(parent, text)
-		local lbl = New("TextLabel", {
-			Parent = parent,
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 18),
-			Text = text,
-			TextColor3 = Theme().TextDim,
-			TextSize = 12,
-			Font = Enum.Font.Gotham,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			ZIndex = 90,
-		})
-		AddRefresher(function()
-			lbl.TextColor3 = Theme().TextDim
-		end)
-		return lbl
-	end
+	ToggleButton.MouseButton1Click:Connect(function()
+		Toggle(not opened)
+	end)
 
+	AddRefresher(function()
+		Holder.BackgroundColor3 = Theme().Surface2
+		Holder.BackgroundTransparency = Theme().Surface2Transparency
+		Label.TextColor3 = Theme().Text
+		ValueLabel.TextColor3 = Theme().TextDim
+		DropFrame.BackgroundColor3 = Theme().Surface
+		DropFrame.BackgroundTransparency = Theme().SurfaceTransparency
+	end)
+
+	return {
+		Frame = Holder,
+		Get = function() return selected end,
+		Set = function(v)
+			selected = v
+			ValueLabel.Text = tostring(v)
+		end
+	}
+end
 	-- settings controls
 	local ThemeGrid = New("Frame", {Parent = ThemePanel, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 120), ZIndex = 85})
 	New("UIGridLayout", {Parent = ThemeGrid, CellSize = UDim2.new(0.5, -6, 0, 34), CellPadding = UDim2.fromOffset(12, 10), SortOrder = Enum.SortOrder.LayoutOrder})
